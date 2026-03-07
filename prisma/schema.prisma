@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String
+  email          String           @unique
+  password       String
+  role           Role             @default(STUDENT)
+  createdAt      DateTime         @default(now())
+  purchases      Purchase[]
+  progress       Progress[]
+  reviews        Review[]
+  lessonProgress LessonProgress[]
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model Course {
+  id           String     @id @default(cuid())
+  title        String
+  description  String
+  price        Float
+  currency     String     @default("OMR")
+  thumbnail    String?
+  totalLessons Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  purchases    Purchase[]
+  progress     Progress[]
+  lessons      Lesson[]
+}
+
+model Purchase {
+  id              String         @id @default(cuid())
+  userId          String
+  courseId        String
+  stripeSessionId String?
+  amount          Float
+  status          PurchaseStatus @default(PENDING)
+  paymentMethod   PaymentMethod  @default(STRIPE)
+  createdAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id])
+  course          Course         @relation(fields: [courseId], references: [id])
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  WHATSAPP_BANK_TRANSFER
+}
+
+model Progress {
+  id                  String   @id @default(cuid())
+  userId              String
+  courseId            String
+  completedLessons    Int      @default(0)
+  totalMinutesWatched Int      @default(0)
+  lastAccessedAt      DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id])
+  course              Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  rating    Int      @default(5)
+  comment   String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model Lesson {
+  id          String           @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  videoUrl    String?
+  duration    Int              @default(0)
+  order       Int              @default(0)
+  isPreview   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  course      Course           @relation(fields: [courseId], references: [id])
+  documents   Document[]
+  progress    LessonProgress[]
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  lessonId  String
+  title     String
+  fileUrl   String
+  fileType  String   @default("pdf")
+  createdAt DateTime @default(now())
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+}
+
+model LessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  lessonId    String
+  completed   Boolean   @default(false)
+  watchedSecs Int       @default(0)
+  completedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id])
+  lesson      Lesson    @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
