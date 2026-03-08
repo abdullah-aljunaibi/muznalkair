@@ -42,8 +42,8 @@ export default function LoginPage() {
         toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       } else {
         toast.success("تم تسجيل الدخول بنجاح");
-        router.push("/dashboard");
-        router.refresh();
+        window.location.href = "/dashboard";
+        return;
       }
     } catch {
       toast.error("حدث خطأ ما، يرجى المحاولة مجددًا");
