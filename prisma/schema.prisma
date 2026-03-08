@@ -19,6 +19,7 @@ model User {
   progress       Progress[]
   reviews        Review[]
   lessonProgress LessonProgress[]
+  resetTokens    PasswordResetToken[]
 }
 
 enum Role {
@@ -45,7 +46,7 @@ model Purchase {
   id              String         @id @default(cuid())
   userId          String
   courseId        String
-  stripeSessionId String?
+  stripeSessionId String?        @unique
   amount          Float
   status          PurchaseStatus @default(PENDING)
   paymentMethod   PaymentMethod  @default(STRIPE)
@@ -126,4 +127,16 @@ model LessonProgress {
   lesson      Lesson    @relation(fields: [lessonId], references: [id])
 
   @@unique([userId, lessonId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }

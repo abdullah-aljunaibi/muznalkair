@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getRequestIp } from "@/lib/request-ip";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname === "/api/auth/callback/credentials" && req.method === "POST") {
+    const ip = getRequestIp(req);
+    const rateLimit = checkRateLimit(`login-mw:${ip}`, RATE_LIMITS.login);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة بعد قليل." },
+        { status: 429 }
+      );
+    }
+  }
 
   // Auth.js v5 uses "authjs" cookie prefix, not "next-auth"
   const token = await getToken({
@@ -40,5 +53,10 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/dashboard/:path*",
+    "/api/auth/callback/credentials",
+  ],
 };

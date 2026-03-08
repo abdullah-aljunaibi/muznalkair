@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import MuznLogo from "@/components/MuznLogo";
 
 const registerSchema = z
@@ -27,6 +26,8 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const {
     register,
@@ -39,6 +40,9 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
+    setFormError(null);
+    setFormSuccess(null);
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -53,13 +57,15 @@ export default function RegisterPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        toast.error(json.error || "حدث خطأ أثناء إنشاء الحساب");
+        setFormError(json.error || "حدث خطأ أثناء إنشاء الحساب");
       } else {
-        toast.success("تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول");
-        router.push("/login");
+        setFormSuccess("تم إنشاء الحساب بنجاح! سيتم تحويلكِ إلى صفحة تسجيل الدخول.");
+        setTimeout(() => {
+          router.push(`/login?registered=1&email=${encodeURIComponent(data.email)}`);
+        }, 900);
       }
     } catch {
-      toast.error("حدث خطأ ما، يرجى المحاولة مجددًا");
+      setFormError("حدث خطأ ما، يرجى المحاولة مجددًا");
     } finally {
       setLoading(false);
     }
@@ -92,6 +98,32 @@ export default function RegisterPage() {
           >
             إنشاء حساب جديد
           </h2>
+
+          {formError && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#FEF2F2",
+                color: "#DC2626",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              {formError}
+            </div>
+          )}
+
+          {formSuccess && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#ECFDF5",
+                color: "#047857",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              {formSuccess}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Full Name */}

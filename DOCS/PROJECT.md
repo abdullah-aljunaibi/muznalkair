@@ -236,14 +236,40 @@ Register a new user.
 { "name": "string", "email": "string", "password": "string" }
 
 // Response 201
-{ "message": "تم إنشاء الحساب بنجاح" }
+{ "user": { "id": "...", "name": "...", "email": "...", "createdAt": "..." } }
 
 // Response 400
-{ "error": "البريد الإلكتروني مستخدم بالفعل" }
+{ "error": "البيانات المُدخلة غير صحيحة" }
+
+// Response 409
+{ "error": "البريد الإلكتروني مسجّل بالفعل" }
 ```
 
 #### `POST /api/auth/[...nextauth]`
 NextAuth handler. Use `/api/auth/signin` with credentials.
+
+#### `POST /api/auth/forgot-password`
+Request password reset token.
+```json
+// Request
+{ "email": "student@example.com" }
+
+// Response 200
+{ "message": "إذا كان البريد الإلكتروني مسجلًا لدينا، فستصلكِ رسالة لإعادة تعيين كلمة المرور." }
+```
+
+#### `POST /api/auth/reset-password`
+Reset password using one-time token.
+```json
+// Request
+{ "token": "raw-token-from-email", "password": "new-password" }
+
+// Response 200
+{ "message": "تم تحديث كلمة المرور بنجاح. يمكنكِ تسجيل الدخول الآن." }
+
+// Response 400
+{ "error": "رابط إعادة التعيين غير صالح أو منتهي الصلاحية" }
+```
 
 ---
 
@@ -300,8 +326,9 @@ Create Stripe checkout session.
 #### `POST /api/webhook/stripe`
 Stripe webhook. Called by Stripe on payment completion.
 - Event: `checkout.session.completed`
-- Action: Creates `Purchase` record with `status: COMPLETED`
-- Must configure `STRIPE_WEBHOOK_SECRET` in env
+- Action: idempotent upsert on `stripeSessionId` + progress upsert
+- Sends purchase confirmation email on first successful completion
+- Requires `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (returns `503` if missing)
 
 ---
 
@@ -383,9 +410,18 @@ Uses **NextAuth.js v5** with Credentials Provider.
 ### Flow
 1. User submits email + password at `/login`
 2. NextAuth calls credentials `authorize()` function
-3. Passwords compared with `bcryptjs.compare()`
-4. On success: JWT session created, user redirected to `/dashboard`
-5. On failure: Error message shown
+3. Lightweight rate limiting applied by IP/email (and middleware on auth callback)
+4. Passwords compared with `bcryptjs.compare()`
+5. On success: JWT session created, user redirected to `/dashboard`
+6. On failure: clear Arabic inline error message shown
+
+### Password Reset
+1. User clicks `نسيت كلمة المرور؟` on `/login`
+2. User submits email at `/forgot-password`
+3. API stores hashed reset token with 1-hour expiry
+4. Email includes `/reset-password?token=...`
+5. On submit, token must be valid, non-expired, and unused
+6. Password is hashed via `bcryptjs` and token(s) are marked as used
 
 ### Session Object
 ```typescript
@@ -415,7 +451,8 @@ if (!session) redirect("/login");
 4. User redirected to Stripe hosted page
 5. On success → redirected to `/dashboard?payment=success`
 6. Stripe fires `checkout.session.completed` webhook
-7. `/api/webhook/stripe` receives event, creates `Purchase` record
+7. `/api/webhook/stripe` verifies signature and processes event idempotently
+8. Purchase confirmation email is sent (first successful processing only)
 
 **Test Cards:**
 - Success: `4242 4242 4242 4242` (any future date, any CVC)
@@ -441,6 +478,8 @@ if (!session) redirect("/login");
 | `STRIPE_SECRET_KEY` | ✅ | `sk_test_...` or `sk_live_...` |
 | `STRIPE_PUBLISHABLE_KEY` | ✅ | `pk_test_...` or `pk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | ✅ (prod) | `whsec_...` from Stripe dashboard |
+| `RESEND_API_KEY` | ⚠️ Optional | Enables transactional email sending |
+| `EMAIL_FROM` | ⚠️ Optional | Sender identity for emails |
 | `WHATSAPP_NUMBER` | ✅ | Without `+`, e.g. `96897021040` |
 
 ---
@@ -485,6 +524,7 @@ git push -u origin main
 # 3. Set NEXTAUTH_URL to production domain
 # 4. Configure Stripe webhook to point at https://yourdomain.com/api/webhook/stripe
 # 5. Get STRIPE_WEBHOOK_SECRET from Stripe dashboard and update Vercel env
+# 6. (Optional but recommended) Configure Resend and set RESEND_API_KEY + EMAIL_FROM
 ```
 
 ### Database Commands
@@ -494,6 +534,9 @@ npx prisma db push
 
 # Create migration (production)
 npx prisma migrate deploy
+
+# If project started without migration history, use:
+npx prisma db push
 
 # Open Prisma Studio (DB browser)
 npx prisma studio
@@ -579,18 +622,34 @@ npx prisma generate
 - WhatsApp: +96897021040
 - Server: DigitalOcean VPS (bxb-titan, 159.223.92.255)
 
+### v0.1.1 — 2026-03-08
+**Phase 1 hardening (auth/email/webhook)**
+
+#### Added
+- Forgot/reset password flow (`/forgot-password`, `/reset-password`)
+- `PasswordResetToken` model with expiry + single-use token handling
+- Transactional email abstraction (Resend) with graceful fallback
+- Welcome email on registration
+- Password reset email
+- Purchase confirmation email (Stripe + manual admin approval path)
+- Lightweight rate limiting for login/register/forgot/reset endpoints
+- Arabic inline success/error states in auth screens
+
+#### Improved
+- Stripe webhook idempotency via unique `stripeSessionId`
+- Stripe env safety: controlled `503` response when webhook env vars are missing
+- Login redirect stability to `/dashboard` using explicit client-side navigation
+
 ---
 
 ## 14. Known Issues & TODOs
 
 ### High Priority
 - [ ] **Admin panel** — Manually approve WhatsApp bank transfer payments
-- [ ] **STRIPE_WEBHOOK_SECRET** — Must be set before production launch
 - [ ] **NEXTAUTH_URL** — Must be updated to production domain before deploy
 - [ ] **Real course content** — Replace placeholder courses, lessons, prices with client data
 
 ### Medium Priority
-- [ ] **Email notifications** — Send confirmation email on successful purchase
 - [ ] **Course thumbnails** — Upload real course images
 - [ ] **Video hosting** — Decide: YouTube vs. self-hosted vs. Vimeo/Mux
 - [ ] **Arabic number formatting** — Ensure all numbers display in Arabic numerals

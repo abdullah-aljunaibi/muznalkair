@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getRequestIp } from "@/lib/request-ip";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -11,6 +14,15 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getRequestIp(request);
+    const rateLimit = checkRateLimit(`register:${ip}`, RATE_LIMITS.register);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "تم تجاوز عدد المحاولات. يرجى المحاولة بعد قليل." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
 
@@ -21,7 +33,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, password } = parsed.data;
+    const { name, password } = parsed.data;
+    const email = parsed.data.email.toLowerCase();
 
     // Check if email already exists
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -47,6 +60,8 @@ export async function POST(request: NextRequest) {
         createdAt: true,
       },
     });
+
+    void sendWelcomeEmail(user.email, user.name);
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {

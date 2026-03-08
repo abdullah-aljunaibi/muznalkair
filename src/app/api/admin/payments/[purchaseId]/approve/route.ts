@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { sendPurchaseSuccessEmail } from "@/lib/email";
 
 export async function PUT(
   _req: NextRequest,
@@ -15,6 +16,10 @@ export async function PUT(
 
   const purchase = await prisma.purchase.findUnique({
     where: { id: purchaseId },
+    include: {
+      user: { select: { name: true, email: true } },
+      course: { select: { title: true } },
+    },
   });
 
   if (!purchase) {
@@ -48,6 +53,12 @@ export async function PUT(
       totalMinutesWatched: 0,
     },
   });
+
+  void sendPurchaseSuccessEmail(
+    purchase.user.email,
+    purchase.user.name,
+    purchase.course.title
+  );
 
   return NextResponse.json({ success: true });
 }

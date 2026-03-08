@@ -2,14 +2,18 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import MuznLogo from "@/components/MuznLogo";
 
 function LoginForm() {
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const hasError = searchParams.get("error");
+  const registered = searchParams.get("registered") === "1";
+  const resetSuccess = searchParams.get("reset") === "1";
 
   return (
     <div
@@ -51,18 +55,87 @@ function LoginForm() {
             </div>
           )}
 
+          {registered && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#ECFDF5",
+                color: "#047857",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              تم إنشاء حسابكِ بنجاح. يمكنكِ تسجيل الدخول الآن.
+            </div>
+          )}
+
+          {resetSuccess && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#ECFDF5",
+                color: "#047857",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              تم تحديث كلمة المرور بنجاح. سجّلي الدخول بكلمة المرور الجديدة.
+            </div>
+          )}
+
+          {formError && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#FEF2F2",
+                color: "#DC2626",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              {formError}
+            </div>
+          )}
+
           <form
             onSubmit={async (e) => {
               e.preventDefault();
               setLoading(true);
-              const form = new FormData(e.currentTarget);
-              // Let NextAuth handle the redirect server-side
-              await signIn("credentials", {
-                email: form.get("email"),
-                password: form.get("password"),
-                callbackUrl: "/dashboard",
-                redirect: true,
-              });
+              setFormError(null);
+              try {
+                const form = new FormData(e.currentTarget);
+                const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
+                const result = await signIn("credentials", {
+                  email: form.get("email"),
+                  password: form.get("password"),
+                  callbackUrl,
+                  redirect: false,
+                });
+
+                if (result?.error) {
+                  setFormError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+                  setLoading(false);
+                  return;
+                }
+
+                if (!result?.ok) {
+                  setFormError(
+                    result?.status === 429
+                      ? "تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة بعد قليل."
+                      : "تعذر تسجيل الدخول الآن، يرجى المحاولة مجددًا."
+                  );
+                  setLoading(false);
+                  return;
+                }
+
+                const target = result?.url || callbackUrl;
+                if (typeof window !== "undefined") {
+                  window.location.assign(target);
+                } else {
+                  router.replace(target);
+                }
+              } catch {
+                setFormError("تعذر تسجيل الدخول الآن، يرجى المحاولة مجددًا.");
+                setLoading(false);
+              }
             }}
             className="flex flex-col gap-4"
           >
@@ -107,6 +180,16 @@ function LoginForm() {
                   color: "#2C2C2C",
                 }}
               />
+            </div>
+
+            <div className="text-sm text-left -mt-1">
+              <Link
+                href="/forgot-password"
+                className="hover:underline"
+                style={{ color: "#1B6B7A", fontFamily: "var(--font-tajawal)" }}
+              >
+                نسيت كلمة المرور؟
+              </Link>
             </div>
 
             <button
