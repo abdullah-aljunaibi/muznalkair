@@ -40,14 +40,19 @@ export default function LoginPage() {
 
       if (result?.error) {
         toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      } else {
+        setLoading(false);
+      } else if (result?.ok) {
         toast.success("تم تسجيل الدخول بنجاح");
-        window.location.href = "/dashboard";
-        return;
+        // Wait for session cookie to be set before redirecting
+        setTimeout(() => {
+          window.location.replace("/dashboard");
+        }, 500);
+      } else {
+        toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        setLoading(false);
       }
     } catch {
       toast.error("حدث خطأ ما، يرجى المحاولة مجددًا");
-    } finally {
       setLoading(false);
     }
   };
