@@ -1,8 +1,18 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AdminCard, AdminPageHeader, StatusBadge } from "@/components/admin/AdminUI";
+import { courseVisibilityLabels } from "@/lib/admin/mock-data";
+
+interface Lesson {
+  id: string;
+  title: string;
+  order: number;
+  duration: number;
+  documents: Array<{ id: string; title: string; fileType: string }>;
+}
 
 interface Course {
   id: string;
@@ -10,7 +20,11 @@ interface Course {
   description: string;
   price: number;
   thumbnail: string | null;
+  totalLessons: number;
+  visibilityStatus: keyof typeof courseVisibilityLabels;
   isActive: boolean;
+  lessons: Lesson[];
+  _count: { purchases: number };
 }
 
 export default function EditCoursePage() {
@@ -28,159 +42,122 @@ export default function EditCoursePage() {
       .finally(() => setLoading(false));
   }, [courseId]);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setSaving(true);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      price: parseFloat(formData.get("price") as string),
-      thumbnail: (formData.get("thumbnail") as string) || null,
-      isActive: formData.get("isActive") === "on",
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      title: formData.get("title"),
+      description: formData.get("description"),
+      price: Number(formData.get("price")),
+      thumbnail: formData.get("thumbnail") || null,
+      totalLessons: Number(formData.get("totalLessons")),
+      visibilityStatus: formData.get("visibilityStatus"),
     };
 
     try {
       const res = await fetch(`/api/admin/courses/${courseId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("حدث خطأ");
-      toast.success("تم تحديث الدورة بنجاح");
+      if (!res.ok) throw new Error();
+      toast.success("تم تحديث الدورة");
       router.push("/admin/courses");
     } catch {
-      toast.error("حدث خطأ أثناء التحديث");
+      toast.error("تعذر حفظ التعديلات");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("هل أنت متأكد من حذف هذه الدورة؟ سيتم حذف جميع الدروس المرتبطة بها.")) return;
-
+    if (!confirm("سيتم حذف الدورة وكل ما يرتبط بها. هل تريد المتابعة؟")) return;
     try {
-      const res = await fetch(`/api/admin/courses/${courseId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("حدث خطأ");
-      toast.success("تم حذف الدورة بنجاح");
+      const res = await fetch(`/api/admin/courses/${courseId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("تم حذف الدورة");
       router.push("/admin/courses");
     } catch {
-      toast.error("حدث خطأ أثناء الحذف");
+      toast.error("تعذر حذف الدورة");
     }
   }
 
-  if (loading) return <p className="text-gray-500">جاري التحميل...</p>;
-  if (!course) return <p className="text-red-500">الدورة غير موجودة</p>;
+  if (loading || !course) return <p className="text-sm text-[#7A6555]">جاري تحميل الدورة...</p>;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1
-          className="text-3xl font-bold"
-          style={{ fontFamily: "var(--font-amiri)", color: "#0A2830" }}
-        >
-          تعديل الدورة
-        </h1>
-        <button
-          onClick={handleDelete}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
-        >
-          حذف الدورة
-        </button>
+      <AdminPageHeader title="تعديل الدورة" description="تحديث وصف الدورة وبياناتها الأساسية مع مراجعة هيكل الدروس الحالي." />
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+        <AdminCard>
+          <form onSubmit={handleSubmit} className="grid gap-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">البيانات الأساسية</h2>
+              <StatusBadge label={courseVisibilityLabels[course.visibilityStatus]} tone={course.visibilityStatus === "PUBLISHED" ? "success" : "warning"} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">اسم الدورة</label>
+              <input name="title" defaultValue={course.title} required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الوصف</label>
+              <textarea name="description" rows={5} defaultValue={course.description} required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+            <div className="grid gap-5 md:grid-cols-3">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">السعر</label>
+                <input name="price" type="number" step="0.001" defaultValue={course.price} required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">عدد الدروس</label>
+                <input name="totalLessons" type="number" min="0" defaultValue={course.totalLessons} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الظهور</label>
+                <select name="visibilityStatus" defaultValue={course.visibilityStatus} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none">
+                  <option value="PUBLISHED">منشورة</option>
+                  <option value="DRAFT">مسودة</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">رابط الصورة المصغرة</label>
+              <input name="thumbnail" type="url" dir="ltr" defaultValue={course.thumbnail || ""} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button disabled={saving} className="rounded-2xl bg-[#0A2830] px-5 py-3 text-sm font-medium text-white disabled:opacity-60">{saving ? "جاري الحفظ..." : "حفظ التعديلات"}</button>
+              <button type="button" onClick={handleDelete} className="rounded-2xl bg-red-600 px-5 py-3 text-sm font-medium text-white">حذف الدورة</button>
+            </div>
+          </form>
+        </AdminCard>
+
+        <AdminCard>
+          <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">الدروس والمرفقات الحالية</h2>
+          <p className="mt-2 text-sm text-[#7A6555]">استعراض سريع لمحتوى الدورة الحالي. إدارة الرفع الكاملة متاحة من صفحة رفع المحتوى.</p>
+          <div className="mt-5 space-y-4">
+            {course.lessons.length === 0 ? (
+              <p className="text-sm text-[#7A6555]">لا توجد دروس مرتبطة بهذه الدورة بعد.</p>
+            ) : (
+              course.lessons.map((lesson) => (
+                <div key={lesson.id} className="rounded-2xl border border-[#EEE3D8] p-4">
+                  <div className="font-medium text-[#0A2830]">{lesson.order}. {lesson.title}</div>
+                  <div className="mt-1 text-xs text-[#7A6555]">المدة: {lesson.duration} دقيقة • المرفقات: {lesson.documents.length}</div>
+                  {lesson.documents.length > 0 ? (
+                    <ul className="mt-3 space-y-1 text-xs text-[#9A8675]">
+                      {lesson.documents.map((document) => (
+                        <li key={document.id}>• {document.title} ({document.fileType})</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </AdminCard>
       </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 max-w-2xl space-y-6"
-      >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            عنوان الدورة
-          </label>
-          <input
-            name="title"
-            required
-            defaultValue={course.title}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            الوصف
-          </label>
-          <textarea
-            name="description"
-            required
-            rows={4}
-            defaultValue={course.description}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            السعر (ر.ع)
-          </label>
-          <input
-            name="price"
-            type="number"
-            step="0.001"
-            required
-            defaultValue={course.price}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            رابط الصورة المصغرة
-          </label>
-          <input
-            name="thumbnail"
-            type="url"
-            defaultValue={course.thumbnail || ""}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-            dir="ltr"
-          />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <input
-            name="isActive"
-            type="checkbox"
-            defaultChecked={course.isActive}
-            id="isActive"
-            className="w-4 h-4"
-          />
-          <label htmlFor="isActive" className="text-sm text-gray-700">
-            الدورة نشطة (ظاهرة للطالبات)
-          </label>
-        </div>
-
-        <div className="flex gap-4 pt-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-8 py-3 text-white rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: "#0A2830" }}
-          >
-            {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-8 py-3 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
-          >
-            إلغاء
-          </button>
-        </div>
-      </form>
     </div>
   );
 }

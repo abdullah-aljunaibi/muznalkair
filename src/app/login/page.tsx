@@ -2,60 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { signIn } from "next-auth/react";
-import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import MuznLogo from "@/components/MuznLogo";
 
-const loginSchema = z.object({
-  email: z.string().email("البريد الإلكتروني غير صحيح"),
-  password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-
-export default function LoginPage() {
-  const router = useRouter();
+function LoginForm() {
   const [loading, setLoading] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const onSubmit = async (data: LoginForm) => {
-    setLoading(true);
-    try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-        setLoading(false);
-      } else if (result?.ok) {
-        toast.success("تم تسجيل الدخول بنجاح");
-        // Wait for session cookie to be set before redirecting
-        setTimeout(() => {
-          window.location.replace("/dashboard");
-        }, 500);
-      } else {
-        toast.error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-        setLoading(false);
-      }
-    } catch {
-      toast.error("حدث خطأ ما، يرجى المحاولة مجددًا");
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const callbackError = searchParams.get("error");
 
   return (
     <div
@@ -63,12 +18,10 @@ export default function LoginPage() {
       style={{ background: "#F5F0E8" }}
     >
       <div className="w-full max-w-md">
-        {/* Card */}
         <div
           className="bg-white rounded-2xl p-8 shadow-lg"
           style={{ boxShadow: "0 8px 40px rgba(27,107,122,0.12)" }}
         >
-          {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <MuznLogo size={56} />
             <h1
@@ -86,8 +39,82 @@ export default function LoginPage() {
             تسجيل الدخول
           </h2>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            {/* Email */}
+          {(error || callbackError) && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#FEF2F2",
+                color: "#DC2626",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              البريد الإلكتروني أو كلمة المرور غير صحيحة
+            </div>
+          )}
+
+          <form
+            action="/api/auth/callback/credentials"
+            method="POST"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setLoading(true);
+              setError("");
+
+              const formData = new FormData(e.currentTarget);
+              const email = formData.get("email") as string;
+              const password = formData.get("password") as string;
+
+              if (!email || !password || password.length < 6) {
+                setError("يرجى إدخال البريد الإلكتروني وكلمة المرور");
+                setLoading(false);
+                return;
+              }
+
+              // Use fetch to call signIn endpoint directly
+              fetch("/api/auth/csrf")
+                .then((r) => r.json())
+                .then(({ csrfToken }) => {
+                  return fetch("/api/auth/callback/credentials", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                      email,
+                      password,
+                      csrfToken,
+                      callbackUrl: "/dashboard",
+                      json: "true",
+                    }),
+                    redirect: "follow",
+                    credentials: "include",
+                  });
+                })
+                .then((res) => {
+                  if (res.url && res.url.includes("/dashboard")) {
+                    window.location.href = "/dashboard";
+                  } else if (res.url && res.url.includes("error")) {
+                    setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+                    setLoading(false);
+                  } else {
+                    // Try to go to dashboard anyway - session may be set
+                    return res.json().catch(() => null);
+                  }
+                })
+                .then((data) => {
+                  if (data && data.url) {
+                    window.location.href = data.url;
+                  } else if (data === null) {
+                    // Already handled above
+                  } else {
+                    window.location.href = "/dashboard";
+                  }
+                })
+                .catch(() => {
+                  setError("حدث خطأ ما، يرجى المحاولة مجددًا");
+                  setLoading(false);
+                });
+            }}
+            className="flex flex-col gap-4"
+          >
             <div className="flex flex-col gap-1">
               <label
                 className="text-sm font-medium"
@@ -96,31 +123,19 @@ export default function LoginPage() {
                 البريد الإلكتروني
               </label>
               <input
-                {...register("email")}
+                name="email"
                 type="email"
+                required
                 placeholder="example@email.com"
                 className="px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 text-right"
                 style={{
-                  borderColor: errors.email ? "#ef4444" : "#E5E7EB",
+                  borderColor: "#E5E7EB",
                   fontFamily: "var(--font-tajawal)",
                   color: "#2C2C2C",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#1B6B7A")}
-                onBlur={(e) =>
-                  (e.target.style.borderColor = errors.email ? "#ef4444" : "#E5E7EB")
-                }
               />
-              {errors.email && (
-                <span
-                  className="text-xs text-red-500"
-                  style={{ fontFamily: "var(--font-tajawal)" }}
-                >
-                  {errors.email.message}
-                </span>
-              )}
             </div>
 
-            {/* Password */}
             <div className="flex flex-col gap-1">
               <label
                 className="text-sm font-medium"
@@ -129,31 +144,20 @@ export default function LoginPage() {
                 كلمة المرور
               </label>
               <input
-                {...register("password")}
+                name="password"
                 type="password"
+                required
+                minLength={6}
                 placeholder="••••••••"
                 className="px-4 py-3 rounded-xl border focus:outline-none text-right"
                 style={{
-                  borderColor: errors.password ? "#ef4444" : "#E5E7EB",
+                  borderColor: "#E5E7EB",
                   fontFamily: "var(--font-tajawal)",
                   color: "#2C2C2C",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#1B6B7A")}
-                onBlur={(e) =>
-                  (e.target.style.borderColor = errors.password ? "#ef4444" : "#E5E7EB")
-                }
               />
-              {errors.password && (
-                <span
-                  className="text-xs text-red-500"
-                  style={{ fontFamily: "var(--font-tajawal)" }}
-                >
-                  {errors.password.message}
-                </span>
-              )}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -168,7 +172,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Link to register */}
           <p
             className="text-center mt-6 text-sm"
             style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}
@@ -184,7 +187,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Back to home */}
         <div className="text-center mt-4">
           <Link
             href="/"
@@ -196,5 +198,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -15,7 +15,12 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json(courses);
+  return NextResponse.json(
+    courses.map((course) => ({
+      ...course,
+      visibilityStatus: course.isActive ? "PUBLISHED" : "DRAFT",
+    }))
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -25,15 +30,28 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, description, price, thumbnail } = body;
+  const { title, description, price, thumbnail, totalLessons, visibilityStatus } = body;
 
   if (!title || !description || price == null) {
     return NextResponse.json({ error: "جميع الحقول مطلوبة" }, { status: 400 });
   }
 
   const course = await prisma.course.create({
-    data: { title, description, price, thumbnail },
+    data: {
+      title,
+      description,
+      price,
+      thumbnail,
+      totalLessons: Number(totalLessons || 0),
+      isActive: visibilityStatus === "PUBLISHED",
+    },
   });
 
-  return NextResponse.json(course, { status: 201 });
+  return NextResponse.json(
+    {
+      ...course,
+      visibilityStatus: course.isActive ? "PUBLISHED" : "DRAFT",
+    },
+    { status: 201 }
+  );
 }

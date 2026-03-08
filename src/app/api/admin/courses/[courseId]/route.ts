@@ -16,6 +16,10 @@ export async function GET(
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: {
+      lessons: {
+        orderBy: { order: "asc" },
+        include: { documents: true },
+      },
       _count: { select: { lessons: true, purchases: true } },
     },
   });
@@ -24,7 +28,10 @@ export async function GET(
     return NextResponse.json({ error: "الدورة غير موجودة" }, { status: 404 });
   }
 
-  return NextResponse.json(course);
+  return NextResponse.json({
+    ...course,
+    visibilityStatus: course.isActive ? "PUBLISHED" : "DRAFT",
+  });
 }
 
 export async function PUT(
@@ -38,14 +45,24 @@ export async function PUT(
 
   const { courseId } = await params;
   const body = await req.json();
-  const { title, description, price, thumbnail, isActive } = body;
+  const { title, description, price, thumbnail, isActive, totalLessons, visibilityStatus } = body;
 
   const course = await prisma.course.update({
     where: { id: courseId },
-    data: { title, description, price, thumbnail, isActive },
+    data: {
+      title,
+      description,
+      price,
+      thumbnail,
+      totalLessons: Number(totalLessons || 0),
+      isActive: typeof isActive === "boolean" ? isActive : visibilityStatus === "PUBLISHED",
+    },
   });
 
-  return NextResponse.json(course);
+  return NextResponse.json({
+    ...course,
+    visibilityStatus: course.isActive ? "PUBLISHED" : "DRAFT",
+  });
 }
 
 export async function DELETE(

@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { AdminCard, AdminPageHeader, StatusBadge } from "@/components/admin/AdminUI";
+import { formatCurrency, formatDate } from "@/lib/admin/utils";
+import { orderStatusLabels, paymentMethodLabels, studentAccessLabels } from "@/lib/admin/mock-data";
 
 interface Purchase {
   id: string;
   amount: number;
-  status: string;
-  paymentMethod: string;
+  status: keyof typeof orderStatusLabels;
+  paymentMethod: keyof typeof paymentMethodLabels;
   createdAt: string;
-  course: { id: string; title: string };
+  course: { id: string; title: string; description: string };
 }
 
 interface Progress {
@@ -21,7 +24,7 @@ interface Progress {
   course: { id: string; title: string; totalLessons: number };
 }
 
-interface Student {
+interface StudentDetail {
   id: string;
   name: string;
   email: string;
@@ -30,9 +33,9 @@ interface Student {
   progress: Progress[];
 }
 
-export default function AdminStudentDetailPage() {
-  const { userId } = useParams();
-  const [student, setStudent] = useState<Student | null>(null);
+export default function StudentDetailPage() {
+  const { userId } = useParams<{ userId: string }>();
+  const [student, setStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,169 +46,96 @@ export default function AdminStudentDetailPage() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString("ar-OM", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const accessStatus = useMemo(() => {
+    if (!student) return "SUSPENDED" as const;
+    if (student.purchases.some((purchase) => purchase.status === "COMPLETED")) return "ACTIVE" as const;
+    if (student.purchases.some((purchase) => purchase.status === "PENDING")) return "PENDING_PAYMENT" as const;
+    return "SUSPENDED" as const;
+  }, [student]);
 
-  const statusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      COMPLETED: "bg-green-100 text-green-700",
-      PENDING: "bg-yellow-100 text-yellow-700",
-      FAILED: "bg-red-100 text-red-700",
-      REFUNDED: "bg-gray-100 text-gray-700",
-    };
-    const labels: Record<string, string> = {
-      COMPLETED: "مكتمل",
-      PENDING: "معلق",
-      FAILED: "مرفوض",
-      REFUNDED: "مسترد",
-    };
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || "bg-gray-100 text-gray-700"}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div>
-        <p className="text-gray-500">جاري التحميل...</p>
-      </div>
-    );
-  }
-
-  if (!student) {
-    return (
-      <div>
-        <p className="text-red-600">الطالبة غير موجودة</p>
-        <Link href="/admin/students" className="text-sm underline mt-2 inline-block" style={{ color: "#D4AF37" }}>
-          العودة للقائمة
-        </Link>
-      </div>
-    );
-  }
+  if (loading || !student) return <p className="text-sm text-[#7A6555]">جاري تحميل ملف الطالبة...</p>;
 
   return (
     <div>
-      <Link
-        href="/admin/students"
-        className="text-sm mb-6 inline-block hover:underline"
-        style={{ color: "#D4AF37" }}
-      >
-        &larr; العودة لقائمة الطالبات
-      </Link>
+      <Link href="/admin/students" className="mb-4 inline-block text-sm text-[#9E7E2C] hover:underline">العودة إلى الطالبات</Link>
+      <AdminPageHeader title="ملف الطالبة" description="عرض الحالة الحالية والدورات المسجلة وسجل المدفوعات والتقدم التعليمي." />
 
-      <h1
-        className="text-3xl font-bold mb-8"
-        style={{ fontFamily: "var(--font-amiri)", color: "#0A2830" }}
-      >
-        تفاصيل الطالبة
-      </h1>
+      <div className="grid gap-6 xl:grid-cols-[1fr,1fr]">
+        <AdminCard>
+          <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">البيانات الأساسية</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div><div className="text-sm text-[#7A6555]">الاسم</div><div className="mt-1 font-medium text-[#0A2830]">{student.name}</div></div>
+            <div><div className="text-sm text-[#7A6555]">البريد الإلكتروني</div><div className="mt-1 font-medium text-[#0A2830]">{student.email}</div></div>
+            <div><div className="text-sm text-[#7A6555]">تاريخ الانضمام</div><div className="mt-1">{formatDate(student.createdAt)}</div></div>
+            <div><div className="text-sm text-[#7A6555]">حالة الوصول</div><div className="mt-2"><StatusBadge label={studentAccessLabels[accessStatus]} tone={accessStatus === "ACTIVE" ? "success" : accessStatus === "PENDING_PAYMENT" ? "warning" : "danger"} /></div></div>
+          </div>
+        </AdminCard>
 
-      {/* Student Info Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">الاسم</p>
-            <p className="font-medium text-lg">{student.name}</p>
+        <AdminCard>
+          <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">ملخص التسجيلات</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <div><div className="text-sm text-[#7A6555]">الدورات المسجلة</div><div className="mt-1 text-2xl font-bold text-[#0A2830]">{student.purchases.length}</div></div>
+            <div><div className="text-sm text-[#7A6555]">الدورات النشطة</div><div className="mt-1 text-2xl font-bold text-[#166534]">{student.purchases.filter((purchase) => purchase.status === "COMPLETED").length}</div></div>
+            <div><div className="text-sm text-[#7A6555]">إجمالي الإنفاق</div><div className="mt-1 text-2xl font-bold text-[#0A2830]">{formatCurrency(student.purchases.reduce((sum, purchase) => sum + purchase.amount, 0))}</div></div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">البريد الإلكتروني</p>
-            <p className="font-medium">{student.email}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">تاريخ الانضمام</p>
-            <p className="font-medium">{formatDate(student.createdAt)}</p>
-          </div>
-        </div>
+        </AdminCard>
       </div>
 
-      {/* Purchases Table */}
-      <h2
-        className="text-xl font-bold mb-4"
-        style={{ fontFamily: "var(--font-amiri)", color: "#0A2830" }}
-      >
-        المشتريات
-      </h2>
-      {student.purchases.length === 0 ? (
-        <p className="text-gray-500 mb-8">لا توجد مشتريات</p>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ backgroundColor: "#0A2830" }}>
-                <th className="text-right text-white px-6 py-4 font-medium">الدورة</th>
-                <th className="text-right text-white px-6 py-4 font-medium">المبلغ</th>
-                <th className="text-right text-white px-6 py-4 font-medium">طريقة الدفع</th>
-                <th className="text-right text-white px-6 py-4 font-medium">الحالة</th>
-                <th className="text-right text-white px-6 py-4 font-medium">التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {student.purchases.map((p) => (
-                <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="px-6 py-4 font-medium">{p.course.title}</td>
-                  <td className="px-6 py-4">{p.amount} ر.ع</td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {p.paymentMethod === "WHATSAPP_BANK_TRANSFER" ? "تحويل بنكي" : "Stripe"}
-                  </td>
-                  <td className="px-6 py-4">{statusBadge(p.status)}</td>
-                  <td className="px-6 py-4 text-gray-600">{formatDate(p.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
+        <AdminCard>
+          <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">الدورات والمدفوعات</h2>
+          <div className="mt-4 space-y-4">
+            {student.purchases.length === 0 ? (
+              <p className="text-sm text-[#7A6555]">لا توجد أي دورات مسجلة لهذه الطالبة حتى الآن.</p>
+            ) : (
+              student.purchases.map((purchase) => (
+                <div key={purchase.id} className="rounded-2xl border border-[#EEE3D8] p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="font-medium text-[#0A2830]">{purchase.course.title}</div>
+                      <div className="mt-1 text-sm text-[#7A6555]">{purchase.course.description}</div>
+                      <div className="mt-2 text-xs text-[#9A8675]">{paymentMethodLabels[purchase.paymentMethod]} • {formatDate(purchase.createdAt)}</div>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 md:items-end">
+                      <div className="font-semibold text-[#0A2830]">{formatCurrency(purchase.amount)}</div>
+                      <StatusBadge
+                        label={orderStatusLabels[purchase.status]}
+                        tone={purchase.status === "COMPLETED" ? "success" : purchase.status === "PENDING" ? "warning" : purchase.status === "FAILED" ? "danger" : "neutral"}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </AdminCard>
 
-      {/* Progress Table */}
-      <h2
-        className="text-xl font-bold mb-4"
-        style={{ fontFamily: "var(--font-amiri)", color: "#0A2830" }}
-      >
-        التقدم الدراسي
-      </h2>
-      {student.progress.length === 0 ? (
-        <p className="text-gray-500">لا يوجد تقدم مسجل</p>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ backgroundColor: "#0A2830" }}>
-                <th className="text-right text-white px-6 py-4 font-medium">الدورة</th>
-                <th className="text-right text-white px-6 py-4 font-medium">الدروس المكتملة</th>
-                <th className="text-right text-white px-6 py-4 font-medium">إجمالي الدروس</th>
-                <th className="text-right text-white px-6 py-4 font-medium">دقائق المشاهدة</th>
-                <th className="text-right text-white px-6 py-4 font-medium">آخر وصول</th>
-              </tr>
-            </thead>
-            <tbody>
-              {student.progress.map((prog) => {
-                const percent =
-                  prog.course.totalLessons > 0
-                    ? Math.round((prog.completedLessons / prog.course.totalLessons) * 100)
-                    : 0;
+        <AdminCard>
+          <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">التقدم التعليمي</h2>
+          <div className="mt-4 space-y-4">
+            {student.progress.length === 0 ? (
+              <p className="text-sm text-[#7A6555]">لا يوجد تقدم مسجل بعد.</p>
+            ) : (
+              student.progress.map((item) => {
+                const percent = item.course.totalLessons > 0 ? Math.round((item.completedLessons / item.course.totalLessons) * 100) : 0;
                 return (
-                  <tr key={prog.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-medium">{prog.course.title}</td>
-                    <td className="px-6 py-4">
-                      {prog.completedLessons}
-                      <span className="text-gray-400 text-xs mr-1">({percent}%)</span>
-                    </td>
-                    <td className="px-6 py-4">{prog.course.totalLessons}</td>
-                    <td className="px-6 py-4">{prog.totalMinutesWatched}</td>
-                    <td className="px-6 py-4 text-gray-600">{formatDate(prog.lastAccessedAt)}</td>
-                  </tr>
+                  <div key={item.id} className="rounded-2xl border border-[#EEE3D8] p-4">
+                    <div className="font-medium text-[#0A2830]">{item.course.title}</div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#EFE7DE]">
+                      <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${percent}%` }} />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-[#7A6555]">
+                      <span>{item.completedLessons} / {item.course.totalLessons} دروس</span>
+                      <span>{percent}%</span>
+                    </div>
+                    <div className="mt-2 text-xs text-[#9A8675]">آخر دخول: {formatDate(item.lastAccessedAt)} • {item.totalMinutesWatched} دقيقة مشاهدة</div>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+              })
+            )}
+          </div>
+        </AdminCard>
+      </div>
     </div>
   );
 }

@@ -37,14 +37,24 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const result = students.map((s) => ({
-    id: s.id,
-    name: s.name,
-    email: s.email,
-    createdAt: s.createdAt,
-    courseCount: s._count.purchases,
-    totalSpent: s.purchases.reduce((sum, p) => sum + p.amount, 0),
-  }));
+  const result = students.map((s) => {
+    const statuses = s.purchases.map((purchase) => purchase.amount >= 0 ? "COMPLETED" : "FAILED");
+    const completedPurchases = s.purchases.length;
+    const pendingPurchases = s._count.purchases - completedPurchases;
+
+    return {
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      createdAt: s.createdAt,
+      courseCount: s._count.purchases,
+      totalSpent: s.purchases.reduce((sum, p) => sum + p.amount, 0),
+      accessStatus: completedPurchases > 0 ? "ACTIVE" : pendingPurchases > 0 ? "PENDING_PAYMENT" : "SUSPENDED",
+      completedPurchases,
+      pendingPurchases,
+      statuses,
+    };
+  });
 
   return NextResponse.json(result);
 }

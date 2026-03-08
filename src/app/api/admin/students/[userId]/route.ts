@@ -22,7 +22,7 @@ export async function GET(
       createdAt: true,
       purchases: {
         orderBy: { createdAt: "desc" },
-        include: { course: { select: { id: true, title: true } } },
+        include: { course: { select: { id: true, title: true, description: true } } },
       },
       progress: {
         include: { course: { select: { id: true, title: true, totalLessons: true } } },

@@ -3,125 +3,83 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AdminCard, AdminPageHeader } from "@/components/admin/AdminUI";
 
 export default function NewCoursePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      price: parseFloat(formData.get("price") as string),
-      thumbnail: (formData.get("thumbnail") as string) || undefined,
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      title: formData.get("title"),
+      description: formData.get("description"),
+      price: Number(formData.get("price")),
+      thumbnail: formData.get("thumbnail") || null,
+      totalLessons: Number(formData.get("totalLessons")),
+      visibilityStatus: formData.get("visibilityStatus"),
     };
 
     try {
       const res = await fetch("/api/admin/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "حدث خطأ");
-      }
-
+      if (!res.ok) throw new Error();
       toast.success("تم إنشاء الدورة بنجاح");
       router.push("/admin/courses");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "حدث خطأ");
+    } catch {
+      toast.error("تعذر إنشاء الدورة");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
   return (
     <div>
-      <h1
-        className="text-3xl font-bold mb-8"
-        style={{ fontFamily: "var(--font-amiri)", color: "#0A2830" }}
-      >
-        إضافة دورة جديدة
-      </h1>
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 max-w-2xl space-y-6"
-      >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            عنوان الدورة
-          </label>
-          <input
-            name="title"
-            required
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-            style={{ focusRingColor: "#D4AF37" } as React.CSSProperties}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            الوصف
-          </label>
-          <textarea
-            name="description"
-            required
-            rows={4}
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            السعر (ر.ع)
-          </label>
-          <input
-            name="price"
-            type="number"
-            step="0.001"
-            required
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            رابط الصورة المصغرة
-          </label>
-          <input
-            name="thumbnail"
-            type="url"
-            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2"
-            placeholder="https://..."
-            dir="ltr"
-          />
-        </div>
-
-        <div className="flex gap-4 pt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-3 text-white rounded-lg text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: "#0A2830" }}
-          >
-            {loading ? "جاري الحفظ..." : "إنشاء الدورة"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-8 py-3 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
-          >
-            إلغاء
-          </button>
-        </div>
-      </form>
+      <AdminPageHeader title="إضافة دورة جديدة" description="أدخل البيانات الأساسية للدورة كما ستظهر في الأكاديمية والمتجر." />
+      <AdminCard className="max-w-3xl">
+        <form onSubmit={handleSubmit} className="grid gap-5">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">اسم الدورة</label>
+            <input name="title" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الوصف</label>
+            <textarea name="description" rows={5} required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">السعر</label>
+              <input name="price" type="number" step="0.001" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">عدد الدروس</label>
+              <input name="totalLessons" type="number" min="0" defaultValue={0} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الحالة</label>
+              <select name="visibilityStatus" defaultValue="PUBLISHED" className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none">
+                <option value="PUBLISHED">منشورة</option>
+                <option value="DRAFT">مسودة</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">رابط الصورة المصغرة</label>
+            <input name="thumbnail" type="url" dir="ltr" placeholder="https://..." className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+          </div>
+          <div className="flex gap-3">
+            <button disabled={saving} className="rounded-2xl bg-[#0A2830] px-5 py-3 text-sm font-medium text-white disabled:opacity-60">{saving ? "جاري الحفظ..." : "إنشاء الدورة"}</button>
+            <button type="button" onClick={() => router.back()} className="rounded-2xl border border-[#E7DDD2] px-5 py-3 text-sm font-medium text-[#7A6555]">إلغاء</button>
+          </div>
+        </form>
+      </AdminCard>
     </div>
   );
 }
