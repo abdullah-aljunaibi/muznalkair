@@ -20,6 +20,7 @@ model User {
   reviews        Review[]
   lessonProgress LessonProgress[]
   resetTokens    PasswordResetToken[]
+  auditLogs      AuditLog[]
 }
 
 enum Role {
@@ -71,21 +72,21 @@ enum PaymentMethod {
 }
 
 model Coupon {
-  id                String             @id @default(cuid())
-  code              String             @unique
-  description       String             @default("")
-  discountType      CouponDiscountType
-  discountValue     Float
-  status            CouponStatus       @default(ACTIVE)
-  expiresAt         DateTime
-  usageCount        Int                @default(0)
-  usageLimit        Int                @default(0)
-  appliesToAll      Boolean            @default(true)
-  applicableCourseIds String[]         @default([])
-  maxUsesPerUser    Int                @default(1)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  purchases         Purchase[]
+  id                  String             @id @default(cuid())
+  code                String             @unique
+  description         String             @default("")
+  discountType        CouponDiscountType
+  discountValue       Float
+  status              CouponStatus       @default(ACTIVE)
+  expiresAt           DateTime
+  usageCount          Int                @default(0)
+  usageLimit          Int                @default(0)
+  appliesToAll        Boolean            @default(true)
+  applicableCourseIds String[]           @default([])
+  maxUsesPerUser      Int                @default(1)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  purchases           Purchase[]
 }
 
 enum CouponDiscountType {
@@ -172,4 +173,21 @@ model PasswordResetToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorName  String
+  source     String
+  action     String
+  entityType String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
 }

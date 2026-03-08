@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/payments", label: "المدفوعات", icon: "💳" },
   { href: "/admin/courses", label: "الدورات", icon: "📚" },
   { href: "/admin/coupons", label: "الكوبونات", icon: "🏷️" },
+  { href: "/admin/audit", label: "سجل التدقيق", icon: "🛡️" },
   { href: "/admin/uploads", label: "رفع المحتوى", icon: "⬆️" },
 ];
 
