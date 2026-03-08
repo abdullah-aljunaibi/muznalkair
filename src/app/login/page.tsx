@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { signIn } from "next-auth/react";
 import MuznLogo from "@/components/MuznLogo";
 
 function LoginForm() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const searchParams = useSearchParams();
-  const callbackError = searchParams.get("error");
+  const hasError = searchParams.get("error");
 
   return (
     <div
@@ -39,7 +38,7 @@ function LoginForm() {
             تسجيل الدخول
           </h2>
 
-          {(error || callbackError) && (
+          {hasError && (
             <div
               className="mb-4 p-3 rounded-xl text-center text-sm"
               style={{
@@ -53,65 +52,17 @@ function LoginForm() {
           )}
 
           <form
-            action="/api/auth/callback/credentials"
-            method="POST"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               setLoading(true);
-              setError("");
-
-              const formData = new FormData(e.currentTarget);
-              const email = formData.get("email") as string;
-              const password = formData.get("password") as string;
-
-              if (!email || !password || password.length < 6) {
-                setError("يرجى إدخال البريد الإلكتروني وكلمة المرور");
-                setLoading(false);
-                return;
-              }
-
-              // Use fetch to call signIn endpoint directly
-              fetch("/api/auth/csrf")
-                .then((r) => r.json())
-                .then(({ csrfToken }) => {
-                  return fetch("/api/auth/callback/credentials", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: new URLSearchParams({
-                      email,
-                      password,
-                      csrfToken,
-                      callbackUrl: "/dashboard",
-                      json: "true",
-                    }),
-                    redirect: "follow",
-                    credentials: "include",
-                  });
-                })
-                .then((res) => {
-                  if (res.url && res.url.includes("/dashboard")) {
-                    window.location.href = "/dashboard";
-                  } else if (res.url && res.url.includes("error")) {
-                    setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
-                    setLoading(false);
-                  } else {
-                    // Try to go to dashboard anyway - session may be set
-                    return res.json().catch(() => null);
-                  }
-                })
-                .then((data) => {
-                  if (data && data.url) {
-                    window.location.href = data.url;
-                  } else if (data === null) {
-                    // Already handled above
-                  } else {
-                    window.location.href = "/dashboard";
-                  }
-                })
-                .catch(() => {
-                  setError("حدث خطأ ما، يرجى المحاولة مجددًا");
-                  setLoading(false);
-                });
+              const form = new FormData(e.currentTarget);
+              // Let NextAuth handle the redirect server-side
+              await signIn("credentials", {
+                email: form.get("email"),
+                password: form.get("password"),
+                callbackUrl: "/dashboard",
+                redirect: true,
+              });
             }}
             className="flex flex-col gap-4"
           >
