@@ -1,9 +1,14 @@
 interface MuznLogoProps {
   size?: number;
   className?: string;
+  ariaLabel?: string;
 }
 
-export default function MuznLogo({ size = 48, className = "" }: MuznLogoProps) {
+export default function MuznLogo({
+  size = 48,
+  className = "",
+  ariaLabel = "شعار مقرأة مُزن الخير",
+}: MuznLogoProps) {
   return (
     <svg
       width={size}
@@ -12,6 +17,8 @@ export default function MuznLogo({ size = 48, className = "" }: MuznLogoProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      role="img"
+      aria-label={ariaLabel}
     >
       <defs>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">

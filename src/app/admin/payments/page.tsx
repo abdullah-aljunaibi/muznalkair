@@ -68,7 +68,7 @@ export default function PaymentsPage() {
         description="سجل كامل للمدفوعات مع تعديل سريع للحالة ومتابعة التحويلات البنكية ودفعات Stripe."
       />
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <AdminCard><div className="text-sm text-[#7A6555]">الإيراد المحصل</div><div className="mt-2 text-3xl font-bold text-[#166534]">{formatCurrency(stats.completed)}</div></AdminCard>
         <AdminCard><div className="text-sm text-[#7A6555]">دفعات معلقة</div><div className="mt-2 text-3xl font-bold text-[#B7791F]">{stats.pendingCount}</div></AdminCard>
         <AdminCard><div className="text-sm text-[#7A6555]">عمليات استرداد</div><div className="mt-2 text-3xl font-bold text-[#7C3AED]">{stats.refunds}</div></AdminCard>
@@ -79,7 +79,7 @@ export default function PaymentsPage() {
           <div className="p-6 text-sm text-[#7A6555]">جاري تحميل سجلات الدفع...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-[920px] text-sm">
               <thead className="bg-[#0A2830] text-white">
                 <tr>
                   <th className="px-5 py-4 text-right font-medium">الطالبة</th>

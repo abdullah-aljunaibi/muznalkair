@@ -22,7 +22,7 @@ function LoginForm() {
     >
       <div className="w-full max-w-md">
         <div
-          className="bg-white rounded-2xl p-8 shadow-lg"
+          className="rounded-2xl bg-white p-6 shadow-lg sm:p-8"
           style={{ boxShadow: "0 8px 40px rgba(27,107,122,0.12)" }}
         >
           <div className="flex flex-col items-center mb-8">
@@ -141,6 +141,7 @@ function LoginForm() {
           >
             <div className="flex flex-col gap-1">
               <label
+                htmlFor="email"
                 className="text-sm font-medium"
                 style={{ fontFamily: "var(--font-tajawal)", color: "#4A5568" }}
               >
@@ -148,6 +149,7 @@ function LoginForm() {
               </label>
               <input
                 name="email"
+                id="email"
                 type="email"
                 required
                 placeholder="example@email.com"
@@ -162,6 +164,7 @@ function LoginForm() {
 
             <div className="flex flex-col gap-1">
               <label
+                htmlFor="password"
                 className="text-sm font-medium"
                 style={{ fontFamily: "var(--font-tajawal)", color: "#4A5568" }}
               >
@@ -169,6 +172,7 @@ function LoginForm() {
               </label>
               <input
                 name="password"
+                id="password"
                 type="password"
                 required
                 minLength={6}
@@ -186,6 +190,7 @@ function LoginForm() {
               <Link
                 href="/forgot-password"
                 className="hover:underline"
+                aria-label="الانتقال إلى صفحة استعادة كلمة المرور"
                 style={{ color: "#1B6B7A", fontFamily: "var(--font-tajawal)" }}
               >
                 نسيت كلمة المرور؟
@@ -195,7 +200,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl font-medium text-white transition-all duration-200 disabled:opacity-70 mt-2"
+              className="mt-2 min-h-11 w-full rounded-xl py-3 font-medium text-white transition-all duration-200 disabled:opacity-70"
               style={{
                 background: loading ? "#3A8D9E" : "#1B6B7A",
                 fontFamily: "var(--font-tajawal)",
@@ -214,6 +219,7 @@ function LoginForm() {
             <Link
               href="/register"
               className="font-medium hover:underline"
+              aria-label="الانتقال إلى صفحة إنشاء حساب"
               style={{ color: "#1B6B7A" }}
             >
               سجّلي الآن
@@ -225,6 +231,7 @@ function LoginForm() {
           <Link
             href="/"
             className="text-sm hover:underline"
+            aria-label="العودة إلى الصفحة الرئيسية"
             style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}
           >
             ← العودة إلى الصفحة الرئيسية

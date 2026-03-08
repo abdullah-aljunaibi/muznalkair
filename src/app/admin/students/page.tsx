@@ -55,7 +55,7 @@ export default function StudentsPage() {
         description="عرض الطالبات، حالة الوصول، الدورات الملتحقن بها، وسجل الإنفاق لكل طالبة."
       />
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <AdminCard><div className="text-sm text-[#7A6555]">طالبات نشطات</div><div className="mt-2 text-3xl font-bold text-[#166534]">{totals.active}</div></AdminCard>
         <AdminCard><div className="text-sm text-[#7A6555]">بانتظار الدفع</div><div className="mt-2 text-3xl font-bold text-[#B7791F]">{totals.pending}</div></AdminCard>
         <AdminCard><div className="text-sm text-[#7A6555]">إجمالي إنفاق الطالبات</div><div className="mt-2 text-3xl font-bold text-[#0A2830]">{formatCurrency(totals.totalRevenue)}</div></AdminCard>
@@ -78,7 +78,7 @@ export default function StudentsPage() {
           <div className="p-6 text-sm text-[#7A6555]">لا توجد نتائج مطابقة.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-[840px] text-sm">
               <thead className="bg-[#0A2830] text-white">
                 <tr>
                   <th className="px-5 py-4 text-right font-medium">الطالبة</th>

@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "دوراتي",
+};
 
 export default async function CoursesPage() {
   const session = await auth();
@@ -59,7 +64,7 @@ export default async function CoursesPage() {
           </p>
           <Link
             href="/#programs"
-            className="inline-flex px-6 py-2 rounded-xl text-white font-medium text-sm"
+            className="inline-flex min-h-11 items-center px-6 py-2 text-sm font-medium text-white rounded-xl"
             style={{ background: "#1B6B7A", fontFamily: "var(--font-tajawal)" }}
           >
             استعرضي البرامج
@@ -168,7 +173,7 @@ export default async function CoursesPage() {
                   {/* Button */}
                   <Link
                     href={`/dashboard/courses/${purchase.courseId}`}
-                    className="w-full py-2.5 rounded-xl text-sm font-medium text-center block transition-all hover:opacity-90"
+                    className="block min-h-11 w-full rounded-xl py-2.5 text-center text-sm font-medium transition-all hover:opacity-90"
                     style={{
                       background: percentage === 100 ? "#D4AF37" : "#1B6B7A",
                       color: "white",

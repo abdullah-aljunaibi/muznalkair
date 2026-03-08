@@ -9,7 +9,7 @@ export default function Footer() {
           {/* Logo + Tagline */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <MuznLogo size={40} />
+              <MuznLogo size={40} ariaLabel="شعار مقرأة مزن الخير" />
               <span
                 className="font-bold text-lg"
                 style={{ fontFamily: "var(--font-amiri)", color: "#D4AF37" }}
@@ -30,7 +30,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors duration-200"
-                aria-label="Instagram"
+                aria-label="زيارة حساب المقرأة على إنستغرام"
                 style={{ color: "rgba(255,255,255,0.5)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D4AF37"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.5)"; }}
@@ -44,7 +44,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors duration-200"
-                aria-label="YouTube"
+                aria-label="زيارة قناة المقرأة على يوتيوب"
                 style={{ color: "rgba(255,255,255,0.5)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D4AF37"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.5)"; }}
@@ -58,7 +58,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors duration-200"
-                aria-label="WhatsApp"
+                aria-label="التواصل مع المقرأة عبر واتساب"
                 style={{ color: "rgba(255,255,255,0.5)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D4AF37"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.5)"; }}
@@ -88,6 +88,7 @@ export default function Footer() {
                 key={link.href}
                 href={link.href}
                 className="text-sm transition-colors duration-200"
+                aria-label={`الانتقال إلى ${link.label}`}
                 style={{ fontFamily: "var(--font-tajawal)", color: "rgba(255,255,255,0.6)", textDecoration: "none" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#D4AF37"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.6)"; }}

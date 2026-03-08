@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Amiri, Tajawal } from "next/font/google";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Providers from "@/components/Providers";
+import { fullOgImageUrl, siteConfig } from "@/lib/seo";
 import "./globals.css";
 
 const amiri = Amiri({
@@ -19,10 +22,40 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "مقرأة مُزن الخير — أول مقرأة عُمانية نسائية تطوعية",
-  description:
-    "مقرأة مُزن الخير أول مقرأة عُمانية نسائية تطوعية، تُقدّم حلقات تصحيح تلاوة وتحفيظ القرآن الكريم عن بُعد",
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: `${siteConfig.name} — أول مقرأة عُمانية نسائية تطوعية`,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
   keywords: ["مقرأة", "قرآن كريم", "عمان", "تجويد", "حفظ", "تعليم إسلامي"],
+  applicationName: siteConfig.shortName,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "ar_OM",
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    title: `${siteConfig.name} — أول مقرأة عُمانية نسائية تطوعية`,
+    description: siteConfig.description,
+    images: [
+      {
+        url: fullOgImageUrl,
+        width: 1200,
+        height: 630,
+        alt: "مقرأة مُزن الخير",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.name} — أول مقرأة عُمانية نسائية تطوعية`,
+    description: siteConfig.description,
+    creator: siteConfig.twitterHandle,
+    images: [fullOgImageUrl],
+  },
 };
 
 export default function RootLayout({
@@ -36,8 +69,11 @@ export default function RootLayout({
         className="antialiased"
         style={{ fontFamily: "var(--font-tajawal), sans-serif" }}
       >
+        <a href="#app-main" className="skip-link">
+          الانتقال إلى المحتوى الرئيسي
+        </a>
         <Providers>
-          {children}
+          <div id="app-main">{children}</div>
           <Toaster
             position="top-center"
             dir="rtl"
@@ -46,6 +82,8 @@ export default function RootLayout({
               style: { fontFamily: "var(--font-tajawal)" },
             }}
           />
+          <Analytics />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>

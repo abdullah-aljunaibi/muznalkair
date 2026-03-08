@@ -32,6 +32,31 @@ body {
   color: var(--color-text-dark);
 }
 
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  right: 0.75rem;
+  transform: translateY(-180%);
+  z-index: 1000;
+  border-radius: 0.75rem;
+  background: #0a2830;
+  color: #fff;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-family: var(--font-tajawal), sans-serif;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+:focus-visible {
+  outline: 3px solid #d4af37;
+  outline-offset: 2px;
+}
+
 /* Arabic font classes */
 .font-amiri {
   font-family: var(--font-amiri), serif;

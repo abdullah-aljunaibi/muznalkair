@@ -25,7 +25,7 @@ function ResetPasswordForm() {
     >
       <div className="w-full max-w-md">
         <div
-          className="bg-white rounded-2xl p-8 shadow-lg"
+          className="rounded-2xl bg-white p-6 shadow-lg sm:p-8"
           style={{ boxShadow: "0 8px 40px rgba(27,107,122,0.12)" }}
         >
           <div className="flex flex-col items-center mb-8">
@@ -127,6 +127,7 @@ function ResetPasswordForm() {
           >
             <div className="flex flex-col gap-1">
               <label
+                htmlFor="password"
                 className="text-sm font-medium"
                 style={{ fontFamily: "var(--font-tajawal)", color: "#4A5568" }}
               >
@@ -134,6 +135,7 @@ function ResetPasswordForm() {
               </label>
               <input
                 type="password"
+                id="password"
                 required
                 minLength={6}
                 value={password}
@@ -151,6 +153,7 @@ function ResetPasswordForm() {
 
             <div className="flex flex-col gap-1">
               <label
+                htmlFor="confirmPassword"
                 className="text-sm font-medium"
                 style={{ fontFamily: "var(--font-tajawal)", color: "#4A5568" }}
               >
@@ -158,6 +161,7 @@ function ResetPasswordForm() {
               </label>
               <input
                 type="password"
+                id="confirmPassword"
                 required
                 minLength={6}
                 value={confirmPassword}
@@ -176,7 +180,7 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading || !hasToken}
-              className="w-full py-3 rounded-xl font-medium text-white transition-all duration-200 disabled:opacity-70 mt-2"
+              className="mt-2 min-h-11 w-full rounded-xl py-3 font-medium text-white transition-all duration-200 disabled:opacity-70"
               style={{
                 background: loading ? "#3A8D9E" : "#1B6B7A",
                 fontFamily: "var(--font-tajawal)",
@@ -191,7 +195,7 @@ function ResetPasswordForm() {
             className="text-center mt-6 text-sm"
             style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}
           >
-            <Link href="/login" className="hover:underline" style={{ color: "#1B6B7A" }}>
+            <Link href="/login" className="hover:underline" style={{ color: "#1B6B7A" }} aria-label="العودة إلى تسجيل الدخول">
               العودة إلى تسجيل الدخول
             </Link>
           </p>

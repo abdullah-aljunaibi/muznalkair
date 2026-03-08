@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "الرئيسية",
+};
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -154,7 +159,7 @@ export default async function DashboardPage() {
           {/* Button */}
           <Link
             href={`/dashboard/courses/${purchase.courseId}`}
-            className="w-full py-2.5 rounded-xl text-sm font-medium text-center transition-all hover:opacity-90 block"
+            className="block min-h-11 w-full rounded-xl py-2.5 text-center text-sm font-medium transition-all hover:opacity-90"
             style={{
               background: percentage === 100 ? "#D4AF37" : "#1B6B7A",
               color: "white",
@@ -201,7 +206,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           {
             label: "دورات قيد التعلم",

@@ -94,15 +94,16 @@ export default function CheckoutPage() {
       {/* Header */}
       <div className="bg-white border-b border-[#E5E7EB] px-4 py-4">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <MuznLogo size={36} />
+          <Link href="/" className="flex items-center gap-3" aria-label="العودة إلى الصفحة الرئيسية">
+            <MuznLogo size={36} ariaLabel="شعار مقرأة مزن الخير" />
             <span className="text-[#1B6B7A] font-bold" style={{ fontFamily: "var(--font-amiri)" }}>
               مقرأة مُزن الخير
             </span>
           </Link>
           <Link
             href="/dashboard"
-            className="text-sm hover:underline"
+            className="min-h-11 flex items-center text-sm hover:underline"
+            aria-label="الانتقال إلى لوحة التحكم"
             style={{ fontFamily: "var(--font-tajawal)", color: "#1B6B7A" }}
           >
             لوحة التحكم ←
@@ -191,7 +192,7 @@ export default function CheckoutPage() {
               <button
                 onClick={() => handleCheckout(program.id)}
                 disabled={loading}
-                className="w-full py-3 rounded-xl font-medium text-white transition-all duration-200 disabled:opacity-70"
+                className="min-h-11 w-full rounded-xl py-3 font-medium text-white transition-all duration-200 disabled:opacity-70"
                 style={{
                   background: program.popular ? "#1B6B7A" : "#3A8D9E",
                   fontFamily: "var(--font-tajawal)",
@@ -212,7 +213,8 @@ export default function CheckoutPage() {
             href="https://wa.me/96891234567"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white transition-all hover:opacity-90"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-all hover:opacity-90"
+            aria-label="التواصل عبر واتساب"
             style={{ background: "#25D366", fontFamily: "var(--font-tajawal)" }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white">

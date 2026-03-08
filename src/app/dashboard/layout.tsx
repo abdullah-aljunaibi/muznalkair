@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import DashboardSidebar from "@/components/DashboardSidebar";
+
+export const metadata: Metadata = {
+  title: "لوحة الطالبة",
+  description: "لوحة الطالبة في مقرأة مُزن الخير لمتابعة الدورات، التقدم، والملف الشخصي.",
+  alternates: { canonical: "/dashboard" },
+};
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +27,9 @@ export default async function DashboardLayout({
       dir="rtl"
     >
       <DashboardSidebar user={session.user} />
-      <main className="flex-1 p-6 md:p-8 overflow-auto">{children}</main>
+      <main id="main-content" className="flex-1 overflow-auto p-4 pt-16 md:p-8 md:pt-8">
+        {children}
+      </main>
     </div>
   );
 }

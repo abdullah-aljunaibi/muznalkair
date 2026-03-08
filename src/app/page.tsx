@@ -3,12 +3,31 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import IslamicPattern from "@/components/IslamicPattern";
 import Link from "next/link";
+import { siteConfig } from "@/lib/seo";
 
 export default function HomePage() {
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    logo: `${siteConfig.url}/og-image.jpg`,
+    sameAs: [
+      "https://instagram.com/mozn_alkair",
+      "https://youtube.com/@mozn_alkair",
+      "https://wa.me/96891234567",
+    ],
+    description: siteConfig.description,
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
 
         {/* ═══════════════════════════════════════════
             HERO SECTION
@@ -16,8 +35,8 @@ export default function HomePage() {
         <section
           style={{
             background: "#FAF4EE",
-            paddingTop: "100px",
-            paddingBottom: "100px",
+            paddingTop: "clamp(72px, 12vw, 100px)",
+            paddingBottom: "clamp(72px, 12vw, 100px)",
             position: "relative",
             overflow: "hidden",
           }}
@@ -38,7 +57,7 @@ export default function HomePage() {
           }} />
           {/* Calligraphy watermark */}
           <div style={{
-            position: "absolute", fontSize: "18rem", opacity: 0.03,
+            position: "absolute", fontSize: "clamp(5rem, 24vw, 18rem)", opacity: 0.03,
             fontFamily: "var(--font-amiri)", color: "#1B6B7A",
             userSelect: "none", pointerEvents: "none", whiteSpace: "nowrap",
             top: "50%", right: "-5%", transform: "translateY(-50%)",
@@ -197,7 +216,7 @@ export default function HomePage() {
           }} />
 
           <div style={{ position: "relative", maxWidth: "1200px", margin: "0 auto", padding: "0 1.5rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}>
+            <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-16">
               {/* Text Block */}
               <div>
                 <div style={{
@@ -378,7 +397,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "2rem" }}>
               {[
                 {
                   num: "١",
@@ -567,7 +586,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "2rem" }}>
               {[
                 {
                   title: "دورة تصحيح التلاوة للمبتدئات",
@@ -1047,7 +1066,7 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.5rem" }}>
               {[
                 {
                   name: "أم عبدالله المرزوقية",
@@ -1192,7 +1211,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", maxWidth: "700px", margin: "0 auto" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem", maxWidth: "700px", margin: "0 auto" }}>
               {/* Card 1: Stripe / Online Payment */}
               <div style={{
                 background: "rgba(255,255,255,0.06)",

@@ -118,9 +118,10 @@ export default function LessonPlayer({
 
       {/* Mobile Lessons Toggle */}
       <button
-        className="md:hidden flex items-center justify-between px-4 py-3 border-b w-full"
+        className="md:hidden flex min-h-11 w-full items-center justify-between border-b px-4 py-3"
         style={{ background: "#1B6B7A", borderColor: "rgba(255,255,255,0.1)" }}
         onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label={sidebarOpen ? "إغلاق قائمة الدروس" : "فتح قائمة الدروس"}
       >
         <span
           className="text-white text-sm font-medium"
@@ -257,7 +258,7 @@ export default function LessonPlayer({
               <button
                 onClick={handleMarkComplete}
                 disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                className="flex min-h-11 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-90 disabled:opacity-50"
                 style={{
                   background: isCompleted ? "#D4AF37" : "#1B6B7A",
                   color: "white",
@@ -298,7 +299,7 @@ export default function LessonPlayer({
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className="px-4 py-2.5 text-sm font-medium transition-all relative"
+                    className="relative min-h-11 px-4 py-2.5 text-sm font-medium transition-all"
                     style={{
                       fontFamily: "var(--font-tajawal)",
                       color: activeTab === tab ? "#1B6B7A" : "#6B7280",
@@ -415,7 +416,7 @@ export default function LessonPlayer({
             {prevLessonId ? (
               <Link
                 href={`/dashboard/courses/${courseId}/lesson/${prevLessonId}`}
-                className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg transition-all hover:bg-gray-50"
+                className="flex min-h-11 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:bg-gray-50"
                 style={{ fontFamily: "var(--font-tajawal)", color: "#1B6B7A" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -430,7 +431,7 @@ export default function LessonPlayer({
             {nextLessonId ? (
               <Link
                 href={`/dashboard/courses/${courseId}/lesson/${nextLessonId}`}
-                className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg transition-all hover:bg-gray-50"
+                className="flex min-h-11 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:bg-gray-50"
                 style={{ fontFamily: "var(--font-tajawal)", color: "#1B6B7A" }}
               >
                 الدرس السابق

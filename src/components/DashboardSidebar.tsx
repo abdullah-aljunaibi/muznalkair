@@ -56,8 +56,8 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-6 border-b border-white/10">
-        <Link href="/" className="flex items-center gap-3">
-          <MuznLogo size={36} />
+        <Link href="/" className="flex items-center gap-3" aria-label="العودة إلى الصفحة الرئيسية">
+          <MuznLogo size={36} ariaLabel="شعار مقرأة مزن الخير" />
           <span
             className="text-white font-bold text-base"
             style={{ fontFamily: "var(--font-amiri)" }}
@@ -106,6 +106,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
               key={item.href}
               href={item.href}
               className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
+              aria-label={`الانتقال إلى ${item.label}`}
               style={{
                 background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
                 color: isActive ? "white" : "rgba(255,255,255,0.75)",
@@ -125,6 +126,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
           className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-right transition-all duration-200 hover:bg-white/10"
+          aria-label="تسجيل الخروج"
           style={{ color: "rgba(255,255,255,0.75)", fontFamily: "var(--font-tajawal)" }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -150,9 +152,10 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
 
       {/* Mobile: hamburger button */}
       <button
-        className="md:hidden fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-lg"
+        className="md:hidden fixed right-4 top-4 z-50 flex h-11 w-11 items-center justify-center rounded-lg"
         style={{ background: "#1B6B7A", color: "white" }}
         onClick={() => setMobileOpen(!mobileOpen)}
+        aria-label={mobileOpen ? "إغلاق القائمة الجانبية" : "فتح القائمة الجانبية"}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           {mobileOpen ? (

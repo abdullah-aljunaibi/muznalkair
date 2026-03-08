@@ -24,6 +24,7 @@ export default function Navbar() {
             <Link
               href="/login"
               className="px-4 py-2 text-sm font-medium transition-all duration-200"
+              aria-label="الانتقال إلى صفحة تسجيل الدخول"
               style={{
                 fontFamily: "var(--font-tajawal)",
                 color: "#4A3828",
@@ -45,6 +46,7 @@ export default function Navbar() {
             <Link
               href="/register"
               className="text-sm font-medium transition-all duration-200"
+              aria-label="الانتقال إلى صفحة إنشاء حساب"
               style={{
                 fontFamily: "var(--font-tajawal)",
                 background: "#0A2830",
@@ -77,6 +79,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className="text-sm font-medium transition-colors duration-200"
+                aria-label={`الانتقال إلى قسم ${link.label}`}
                 style={{
                   fontFamily: "var(--font-tajawal)",
                   color: "#4A3828",
@@ -96,7 +99,7 @@ export default function Navbar() {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg"
+            className="md:hidden flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="القائمة"
             style={{ color: "#1A0A00" }}
@@ -125,10 +128,10 @@ export default function Navbar() {
           </button>
 
           {/* Right side: Logo + Name */}
-          <Link href="/" className="flex items-center gap-3">
-            <MuznLogo size={40} />
+          <Link href="/" className="flex items-center gap-3" aria-label="العودة إلى الصفحة الرئيسية">
+            <MuznLogo size={40} ariaLabel="شعار مقرأة مزن الخير" />
             <span
-              className="font-bold text-lg"
+              className="hidden text-lg font-bold sm:block"
               style={{ fontFamily: "var(--font-amiri)", color: "#1A0A00" }}
             >
               مقرأة مُزن الخير
@@ -148,7 +151,8 @@ export default function Navbar() {
         >
           <a
             href="/#about"
-            className="py-2 text-right text-sm"
+            className="min-h-11 py-2 text-right text-sm"
+            aria-label="الانتقال إلى قسم من نحن"
             style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
             onClick={() => setMenuOpen(false)}
           >
@@ -156,7 +160,8 @@ export default function Navbar() {
           </a>
           <a
             href="/#programs"
-            className="py-2 text-right text-sm"
+            className="min-h-11 py-2 text-right text-sm"
+            aria-label="الانتقال إلى قسم البرامج"
             style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
             onClick={() => setMenuOpen(false)}
           >
@@ -164,7 +169,8 @@ export default function Navbar() {
           </a>
           <a
             href="/#courses"
-            className="py-2 text-right text-sm"
+            className="min-h-11 py-2 text-right text-sm"
+            aria-label="الانتقال إلى قسم الدورات"
             style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
             onClick={() => setMenuOpen(false)}
           >
@@ -172,7 +178,8 @@ export default function Navbar() {
           </a>
           <Link
             href="/login"
-            className="px-4 py-2 text-sm font-medium text-center"
+            className="min-h-11 px-4 py-2 text-center text-sm font-medium"
+            aria-label="الانتقال إلى صفحة تسجيل الدخول"
             style={{
               fontFamily: "var(--font-tajawal)",
               border: "1px solid rgba(74,56,40,0.3)",
@@ -185,7 +192,8 @@ export default function Navbar() {
           </Link>
           <Link
             href="/register"
-            className="px-4 py-2 text-sm font-medium text-center"
+            className="min-h-11 px-4 py-2 text-center text-sm font-medium"
+            aria-label="الانتقال إلى صفحة إنشاء حساب"
             style={{
               fontFamily: "var(--font-tajawal)",
               background: "#0A2830",
