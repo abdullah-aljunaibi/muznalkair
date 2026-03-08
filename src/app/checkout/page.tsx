@@ -210,7 +210,7 @@ export default function CheckoutPage() {
             أو يمكنك التسجيل عبر واتساب
           </p>
           <a
-            href="https://wa.me/96891234567"
+            href="https://wa.me/96897021040"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-all hover:opacity-90"
