@@ -3,8 +3,18 @@ import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
+  // Auth.js v5 uses "authjs" cookie prefix, not "next-auth"
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+    cookieName:
+      process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
+  });
+
+  // Protect /admin routes
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     if (!token) {
       if (pathname.startsWith("/api/")) {
@@ -21,6 +31,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Protect /dashboard routes
   if (pathname.startsWith("/dashboard") && !token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
