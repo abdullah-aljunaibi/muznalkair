@@ -8,7 +8,9 @@ export type CouponPayload = {
   status?: CouponStatus;
   usageLimit?: number;
   expiresAt?: string;
-  appliesTo?: string;
+  appliesToAll?: boolean;
+  applicableCourseIds?: string[];
+  maxUsesPerUser?: number;
 };
 
 export function normalizeCouponCode(code: string) {
@@ -23,6 +25,13 @@ export function resolveCouponStatus(coupon: Pick<Coupon, "status" | "expiresAt">
   return CouponStatus.ACTIVE;
 }
 
+export function formatCouponAppliesTo(coupon: Pick<Coupon, "appliesToAll" | "applicableCourseIds">, courseTitlesById?: Record<string, string>) {
+  if (coupon.appliesToAll) return "جميع الدورات";
+  if (!coupon.applicableCourseIds.length) return "لا توجد دورات محددة";
+  if (!courseTitlesById) return `${coupon.applicableCourseIds.length} دورات محددة`;
+  return coupon.applicableCourseIds.map((id) => courseTitlesById[id] || id).join("، ");
+}
+
 export function validateCouponInput(payload: CouponPayload) {
   const code = normalizeCouponCode(String(payload.code || ""));
   const description = String(payload.description || "").trim();
@@ -30,8 +39,12 @@ export function validateCouponInput(payload: CouponPayload) {
   const discountValue = Number(payload.discountValue || 0);
   const status = payload.status || CouponStatus.ACTIVE;
   const usageLimit = Number(payload.usageLimit || 0);
-  const appliesTo = String(payload.appliesTo || "جميع الدورات").trim() || "جميع الدورات";
   const expiresAt = payload.expiresAt ? new Date(payload.expiresAt) : null;
+  const appliesToAll = Boolean(payload.appliesToAll);
+  const applicableCourseIds = Array.isArray(payload.applicableCourseIds)
+    ? payload.applicableCourseIds.map(String).filter(Boolean)
+    : [];
+  const maxUsesPerUser = Number(payload.maxUsesPerUser || 1);
 
   if (!code) {
     return { ok: false as const, error: "كود الخصم مطلوب" };
@@ -53,8 +66,16 @@ export function validateCouponInput(payload: CouponPayload) {
     return { ok: false as const, error: "حد الاستخدام غير صالح" };
   }
 
+  if (!Number.isInteger(maxUsesPerUser) || maxUsesPerUser < 1) {
+    return { ok: false as const, error: "حد الاستخدام لكل مستخدم يجب أن يكون 1 أو أكثر" };
+  }
+
   if (!expiresAt || Number.isNaN(expiresAt.getTime())) {
     return { ok: false as const, error: "تاريخ الانتهاء غير صالح" };
+  }
+
+  if (!appliesToAll && applicableCourseIds.length === 0) {
+    return { ok: false as const, error: "اختاري دورة واحدة على الأقل عند التخصيص" };
   }
 
   return {
@@ -67,7 +88,9 @@ export function validateCouponInput(payload: CouponPayload) {
       status,
       usageLimit,
       expiresAt,
-      appliesTo,
+      appliesToAll,
+      applicableCourseIds,
+      maxUsesPerUser,
     },
   };
 }
@@ -84,7 +107,10 @@ export function calculateDiscount(coupon: Pick<Coupon, "discountType" | "discoun
   return { discountAmount, finalAmount };
 }
 
-export function canUseCoupon(coupon: Pick<Coupon, "status" | "expiresAt" | "usageCount" | "usageLimit">) {
+export function canUseCoupon(
+  coupon: Pick<Coupon, "status" | "expiresAt" | "usageCount" | "usageLimit" | "appliesToAll" | "applicableCourseIds" | "maxUsesPerUser">,
+  options?: { courseId?: string; userCompletedUses?: number }
+) {
   const effectiveStatus = resolveCouponStatus(coupon);
   if (effectiveStatus !== CouponStatus.ACTIVE) {
     return { ok: false as const, error: "كود الخصم غير متاح حاليًا" };
@@ -92,6 +118,14 @@ export function canUseCoupon(coupon: Pick<Coupon, "status" | "expiresAt" | "usag
 
   if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) {
     return { ok: false as const, error: "تم الوصول إلى الحد الأقصى لاستخدام هذا الكوبون" };
+  }
+
+  if (!coupon.appliesToAll && options?.courseId && !coupon.applicableCourseIds.includes(options.courseId)) {
+    return { ok: false as const, error: "هذا الكوبون غير صالح لهذه الدورة" };
+  }
+
+  if ((options?.userCompletedUses || 0) >= coupon.maxUsesPerUser) {
+    return { ok: false as const, error: "تم استخدام هذا الكوبون سابقًا بالحد الأقصى المسموح لك" };
   }
 
   return { ok: true as const };

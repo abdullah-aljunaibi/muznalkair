@@ -28,10 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "معرّف الدورة مطلوب" }, { status: 400 });
     }
 
-    const course = await prisma.course.findUnique({
-      where: { id: courseId, isActive: true },
-    });
-
+    const course = await prisma.course.findUnique({ where: { id: courseId, isActive: true } });
     if (!course) {
       return NextResponse.json({ error: "الدورة غير موجودة" }, { status: 404 });
     }
@@ -50,12 +47,16 @@ export async function POST(request: NextRequest) {
     let finalAmount = course.price;
 
     if (couponCode) {
-      const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
+      const [coupon, userUses] = await Promise.all([
+        prisma.coupon.findUnique({ where: { code: couponCode } }),
+        prisma.purchase.count({ where: { userId: session.user.id, status: "COMPLETED", coupon: { code: couponCode } } }),
+      ]);
+
       if (!coupon) {
         return NextResponse.json({ error: "كود الخصم غير صحيح" }, { status: 404 });
       }
 
-      const usable = canUseCoupon(coupon);
+      const usable = canUseCoupon(coupon, { courseId, userCompletedUses: userUses });
       if (!usable.ok) {
         return NextResponse.json({ error: usable.error }, { status: 400 });
       }
@@ -101,11 +102,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       url: checkoutSession.url,
-      pricing: {
-        originalAmount: course.price,
-        discountAmount,
-        finalAmount,
-      },
+      pricing: { originalAmount: course.price, discountAmount, finalAmount },
     });
   } catch (error) {
     console.error("Checkout error:", error);

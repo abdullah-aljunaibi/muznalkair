@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { AdminCard, AdminPageHeader, StatusBadge } from "@/components/admin/AdminUI";
+import { useEffect, useMemo, useState } from "react";
+import { AdminCard, AdminPageHeader, KPI, StatusBadge } from "@/components/admin/AdminUI";
 import { couponStatusLabels } from "@/lib/admin/mock-data";
-import { formatDate } from "@/lib/admin/utils";
+import { formatCurrency, formatDate } from "@/lib/admin/utils";
 
 interface Coupon {
   id: string;
@@ -17,6 +17,13 @@ interface Coupon {
   usageCount: number;
   usageLimit: number;
   appliesTo: string;
+  maxUsesPerUser: number;
+  analytics: {
+    revenue: number;
+    totalDiscount: number;
+    uniqueUsers: number;
+    purchaseCount: number;
+  };
 }
 
 export default function CouponsPage() {
@@ -31,13 +38,27 @@ export default function CouponsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const summary = useMemo(() => ({
+    totalCoupons: coupons.length,
+    activeCoupons: coupons.filter((coupon) => coupon.status === "ACTIVE").length,
+    totalRevenue: coupons.reduce((sum, coupon) => sum + coupon.analytics.revenue, 0),
+    totalDiscount: coupons.reduce((sum, coupon) => sum + coupon.analytics.totalDiscount, 0),
+  }), [coupons]);
+
   return (
     <div>
       <AdminPageHeader
         title="إدارة الكوبونات"
-        description="إدارة أكواد الخصم الفعلية المرتبطة بقاعدة البيانات والدفع."
+        description="إدارة أكواد الخصم الفعلية مع تحليلات استخدام وربط دقيق بالدورات." 
         action={<Link href="/admin/coupons/new" className="rounded-2xl bg-[#0A2830] px-5 py-3 text-sm font-medium text-white hover:opacity-90">إضافة كوبون</Link>}
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KPI label="إجمالي الكوبونات" value={String(summary.totalCoupons)} />
+        <KPI label="الكوبونات النشطة" value={String(summary.activeCoupons)} />
+        <KPI label="إيراد عبر الكوبونات" value={formatCurrency(summary.totalRevenue)} />
+        <KPI label="إجمالي الخصومات" value={formatCurrency(summary.totalDiscount)} />
+      </div>
 
       <AdminCard className="overflow-hidden p-0">
         {loading ? (
@@ -55,10 +76,12 @@ export default function CouponsPage() {
               <thead className="bg-[#0A2830] text-white">
                 <tr>
                   <th className="px-5 py-4 text-right font-medium">الكود</th>
-                  <th className="px-5 py-4 text-right font-medium">الوصف</th>
                   <th className="px-5 py-4 text-right font-medium">الخصم</th>
                   <th className="px-5 py-4 text-right font-medium">ينطبق على</th>
+                  <th className="px-5 py-4 text-right font-medium">لكل مستخدم</th>
                   <th className="px-5 py-4 text-right font-medium">الاستخدام</th>
+                  <th className="px-5 py-4 text-right font-medium">الإيراد</th>
+                  <th className="px-5 py-4 text-right font-medium">الخصومات</th>
                   <th className="px-5 py-4 text-right font-medium">الانتهاء</th>
                   <th className="px-5 py-4 text-right font-medium">الحالة</th>
                   <th className="px-5 py-4 text-right font-medium">الإجراء</th>
@@ -67,11 +90,16 @@ export default function CouponsPage() {
               <tbody>
                 {coupons.map((coupon) => (
                   <tr key={coupon.id} className="border-b border-[#F1E7DC]">
-                    <td className="px-5 py-4 font-semibold text-[#0A2830]">{coupon.code}</td>
-                    <td className="px-5 py-4 text-[#7A6555]">{coupon.description || "—"}</td>
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-[#0A2830]">{coupon.code}</div>
+                      <div className="text-xs text-[#7A6555]">{coupon.description || "—"}</div>
+                    </td>
                     <td className="px-5 py-4">{coupon.discountType === "PERCENTAGE" ? `${coupon.discountValue}%` : `${coupon.discountValue} ر.ع`}</td>
-                    <td className="px-5 py-4">{coupon.appliesTo}</td>
-                    <td className="px-5 py-4">{coupon.usageCount}/{coupon.usageLimit || "∞"}</td>
+                    <td className="px-5 py-4 text-[#7A6555]">{coupon.appliesTo}</td>
+                    <td className="px-5 py-4">{coupon.maxUsesPerUser}</td>
+                    <td className="px-5 py-4">{coupon.usageCount}/{coupon.usageLimit || "∞"}<div className="text-xs text-[#7A6555]">{coupon.analytics.uniqueUsers} مستخدم</div></td>
+                    <td className="px-5 py-4 font-semibold text-[#166534]">{formatCurrency(coupon.analytics.revenue)}</td>
+                    <td className="px-5 py-4 font-semibold text-[#9E7E2C]">{formatCurrency(coupon.analytics.totalDiscount)}</td>
                     <td className="px-5 py-4 text-[#7A6555]">{formatDate(coupon.expiresAt)}</td>
                     <td className="px-5 py-4"><StatusBadge label={couponStatusLabels[coupon.status]} tone={coupon.status === "ACTIVE" ? "success" : coupon.status === "SCHEDULED" ? "info" : "neutral"} /></td>
                     <td className="px-5 py-4"><Link href={`/admin/coupons/${coupon.id}`} className="rounded-xl border border-[#D4AF37]/40 px-3 py-2 text-xs font-medium text-[#9E7E2C] hover:bg-[#FFF8E6]">تعديل</Link></td>

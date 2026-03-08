@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
+import { formatCouponAppliesTo, resolveCouponStatus, validateCouponInput } from "@/lib/coupons";
 import { prisma } from "@/lib/prisma";
-import { resolveCouponStatus, validateCouponInput } from "@/lib/coupons";
 import { NextRequest, NextResponse } from "next/server";
 
 function ensureAdmin(role?: string) {
@@ -13,15 +13,43 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const coupons = await prisma.coupon.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [coupons, courses] = await Promise.all([
+    prisma.coupon.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        purchases: {
+          where: { status: "COMPLETED" },
+          include: {
+            user: { select: { id: true } },
+            course: { select: { id: true, title: true } },
+          },
+        },
+      },
+    }),
+    prisma.course.findMany({ select: { id: true, title: true }, where: { isActive: true } }),
+  ]);
+
+  const courseTitlesById = Object.fromEntries(courses.map((course) => [course.id, course.title]));
 
   return NextResponse.json(
-    coupons.map((coupon) => ({
-      ...coupon,
-      status: resolveCouponStatus(coupon),
-    }))
+    coupons.map((coupon) => {
+      const revenue = coupon.purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+      const totalDiscount = coupon.purchases.reduce((sum, purchase) => sum + purchase.discountAmount, 0);
+      const uniqueUsers = new Set(coupon.purchases.map((purchase) => purchase.userId)).size;
+
+      return {
+        ...coupon,
+        status: resolveCouponStatus(coupon),
+        appliesTo: formatCouponAppliesTo(coupon, courseTitlesById),
+        applicableCourses: coupon.applicableCourseIds.map((id) => ({ id, title: courseTitlesById[id] || id })),
+        analytics: {
+          revenue,
+          totalDiscount,
+          uniqueUsers,
+          purchaseCount: coupon.purchases.length,
+        },
+      };
+    })
   );
 }
 
@@ -47,14 +75,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "كود الخصم مستخدم بالفعل" }, { status: 409 });
   }
 
-  const coupon = await prisma.coupon.create({
-    data: parsed.data,
-  });
+  const coupon = await prisma.coupon.create({ data: parsed.data });
 
   return NextResponse.json(
     {
       ...coupon,
       status: resolveCouponStatus(coupon),
+      appliesTo: formatCouponAppliesTo(coupon),
+      applicableCourses: [],
+      analytics: { revenue: 0, totalDiscount: 0, uniqueUsers: 0, purchaseCount: 0 },
     },
     { status: 201 }
   );

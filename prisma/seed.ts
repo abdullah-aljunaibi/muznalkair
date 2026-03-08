@@ -426,7 +426,17 @@ async function main() {
   const coupons = await Promise.all([
     prisma.coupon.upsert({
       where: { code: "RAMADAN10" },
-      update: {},
+      update: {
+        description: "خصم موسمي لدورات رمضان",
+        discountType: "PERCENTAGE",
+        discountValue: 10,
+        status: "ACTIVE",
+        expiresAt: new Date("2026-04-01T00:00:00.000Z"),
+        usageLimit: 100,
+        appliesToAll: true,
+        applicableCourseIds: [],
+        maxUsesPerUser: 1,
+      },
       create: {
         code: "RAMADAN10",
         description: "خصم موسمي لدورات رمضان",
@@ -435,12 +445,24 @@ async function main() {
         status: "ACTIVE",
         expiresAt: new Date("2026-04-01T00:00:00.000Z"),
         usageLimit: 100,
-        appliesTo: "جميع الدورات المنشورة",
+        appliesToAll: true,
+        applicableCourseIds: [],
+        maxUsesPerUser: 1,
       },
     }),
     prisma.coupon.upsert({
       where: { code: "WELCOME5" },
-      update: {},
+      update: {
+        description: "خصم ترحيبي للطالبات الجديدات",
+        discountType: "FIXED",
+        discountValue: 5,
+        status: "ACTIVE",
+        expiresAt: new Date("2026-06-01T00:00:00.000Z"),
+        usageLimit: 50,
+        appliesToAll: false,
+        applicableCourseIds: ["course_quran_reading_001", "course_tajweed_001"],
+        maxUsesPerUser: 1,
+      },
       create: {
         code: "WELCOME5",
         description: "خصم ترحيبي للطالبات الجديدات",
@@ -449,7 +471,9 @@ async function main() {
         status: "ACTIVE",
         expiresAt: new Date("2026-06-01T00:00:00.000Z"),
         usageLimit: 50,
-        appliesTo: "جميع الدورات",
+        appliesToAll: false,
+        applicableCourseIds: ["course_quran_reading_001", "course_tajweed_001"],
+        maxUsesPerUser: 1,
       },
     }),
   ]);

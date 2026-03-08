@@ -71,19 +71,21 @@ enum PaymentMethod {
 }
 
 model Coupon {
-  id            String             @id @default(cuid())
-  code          String             @unique
-  description   String             @default("")
-  discountType  CouponDiscountType
-  discountValue Float
-  status        CouponStatus       @default(ACTIVE)
-  expiresAt     DateTime
-  usageCount    Int                @default(0)
-  usageLimit    Int                @default(0)
-  appliesTo     String             @default("جميع الدورات")
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  purchases     Purchase[]
+  id                String             @id @default(cuid())
+  code              String             @unique
+  description       String             @default("")
+  discountType      CouponDiscountType
+  discountValue     Float
+  status            CouponStatus       @default(ACTIVE)
+  expiresAt         DateTime
+  usageCount        Int                @default(0)
+  usageLimit        Int                @default(0)
+  appliesToAll      Boolean            @default(true)
+  applicableCourseIds String[]         @default([])
+  maxUsesPerUser    Int                @default(1)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  purchases         Purchase[]
 }
 
 enum CouponDiscountType {

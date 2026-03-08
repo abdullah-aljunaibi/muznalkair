@@ -1,13 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminUI";
+
+type CourseOption = { id: string; title: string };
 
 export default function NewCouponPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [appliesToAll, setAppliesToAll] = useState(true);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/coupons")
+      .then(() => fetch("/api/admin/courses"))
+      .then((res) => res.json())
+      .then((data) => setCourses(data.map((course: { id: string; title: string }) => ({ id: course.id, title: course.title }))))
+      .catch(console.error);
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,7 +35,9 @@ export default function NewCouponPage() {
       status: formData.get("status"),
       usageLimit: Number(formData.get("usageLimit")),
       expiresAt: formData.get("expiresAt"),
-      appliesTo: formData.get("appliesTo"),
+      appliesToAll,
+      applicableCourseIds: appliesToAll ? [] : selectedCourseIds,
+      maxUsesPerUser: Number(formData.get("maxUsesPerUser")),
     };
 
     try {
@@ -42,10 +57,16 @@ export default function NewCouponPage() {
     }
   }
 
+  function toggleCourse(courseId: string) {
+    setSelectedCourseIds((current) =>
+      current.includes(courseId) ? current.filter((id) => id !== courseId) : [...current, courseId]
+    );
+  }
+
   return (
     <div>
-      <AdminPageHeader title="إضافة كوبون" description="إنشاء كوبون خصم جديد وربطه بالدفع مباشرة." />
-      <AdminCard className="max-w-3xl">
+      <AdminPageHeader title="إضافة كوبون" description="إنشاء كوبون خصم جديد وربطه بالدفع مباشرة مع قواعد استخدام واضحة." />
+      <AdminCard className="max-w-4xl">
         <form onSubmit={handleSubmit} className="grid gap-5">
           <div className="grid gap-5 md:grid-cols-2">
             <div>
@@ -60,11 +81,13 @@ export default function NewCouponPage() {
               </select>
             </div>
           </div>
+
           <div>
             <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الوصف</label>
             <textarea name="description" rows={4} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
           </div>
-          <div className="grid gap-5 md:grid-cols-3">
+
+          <div className="grid gap-5 md:grid-cols-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">قيمة الخصم</label>
               <input name="discountValue" type="number" step="0.001" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
@@ -72,6 +95,10 @@ export default function NewCouponPage() {
             <div>
               <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الحد الأقصى للاستخدام</label>
               <input name="usageLimit" type="number" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">لكل مستخدم</label>
+              <input name="maxUsesPerUser" type="number" min="1" defaultValue="1" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الحالة</label>
@@ -82,16 +109,33 @@ export default function NewCouponPage() {
               </select>
             </div>
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">تاريخ الانتهاء</label>
-              <input name="expiresAt" type="date" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">ينطبق على</label>
-              <input name="appliesTo" defaultValue="جميع الدورات" className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
-            </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">تاريخ الانتهاء</label>
+            <input name="expiresAt" type="date" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
           </div>
+
+          <div className="rounded-2xl border border-[#E7DDD2] p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <input id="all-courses" type="checkbox" checked={appliesToAll} onChange={(e) => setAppliesToAll(e.target.checked)} />
+              <label htmlFor="all-courses" className="text-sm font-medium text-[#6E5B4D]">ينطبق على جميع الدورات</label>
+            </div>
+            {!appliesToAll ? (
+              <div className="grid gap-2 md:grid-cols-2">
+                {courses.map((course) => (
+                  <label key={course.id} className="flex items-center gap-3 rounded-xl border border-[#F1E7DC] px-3 py-2 text-sm text-[#4A3828]">
+                    <input
+                      type="checkbox"
+                      checked={selectedCourseIds.includes(course.id)}
+                      onChange={() => toggleCourse(course.id)}
+                    />
+                    <span>{course.title}</span>
+                  </label>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
           <div className="flex gap-3">
             <button disabled={saving} className="rounded-2xl bg-[#0A2830] px-5 py-3 text-sm font-medium text-white disabled:opacity-60">{saving ? "جاري الحفظ..." : "حفظ الكوبون"}</button>
             <button type="button" onClick={() => router.back()} className="rounded-2xl border border-[#E7DDD2] px-5 py-3 text-sm font-medium text-[#7A6555]">إلغاء</button>

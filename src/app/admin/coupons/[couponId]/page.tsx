@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AdminCard, AdminPageHeader, StatusBadge } from "@/components/admin/AdminUI";
+import { AdminCard, AdminPageHeader, KPI, StatusBadge } from "@/components/admin/AdminUI";
 import { couponStatusLabels } from "@/lib/admin/mock-data";
-import { formatDate } from "@/lib/admin/utils";
+import { formatCurrency, formatDate } from "@/lib/admin/utils";
+
+type CourseOption = { id: string; title: string };
 
 interface Coupon {
   id: string;
@@ -18,7 +20,16 @@ interface Coupon {
   usageCount: number;
   usageLimit: number;
   appliesTo: string;
-  createdAt?: string;
+  appliesToAll: boolean;
+  applicableCourseIds: string[];
+  maxUsesPerUser: number;
+  analytics: {
+    revenue: number;
+    totalDiscount: number;
+    uniqueUsers: number;
+    purchaseCount: number;
+  };
+  availableCourses: CourseOption[];
 }
 
 export default function CouponDetailPage() {
@@ -27,14 +38,26 @@ export default function CouponDetailPage() {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [appliesToAll, setAppliesToAll] = useState(true);
 
   useEffect(() => {
     fetch(`/api/admin/coupons/${couponId}`)
       .then((res) => res.json())
-      .then(setCoupon)
+      .then((data) => {
+        setCoupon(data);
+        setSelectedCourseIds(data.applicableCourseIds || []);
+        setAppliesToAll(Boolean(data.appliesToAll));
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [couponId]);
+
+  function toggleCourse(courseId: string) {
+    setSelectedCourseIds((current) =>
+      current.includes(courseId) ? current.filter((id) => id !== courseId) : [...current, courseId]
+    );
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +76,9 @@ export default function CouponDetailPage() {
           status: formData.get("status"),
           usageLimit: Number(formData.get("usageLimit")),
           expiresAt: formData.get("expiresAt"),
-          appliesTo: formData.get("appliesTo"),
+          appliesToAll,
+          applicableCourseIds: appliesToAll ? [] : selectedCourseIds,
+          maxUsesPerUser: Number(formData.get("maxUsesPerUser")),
         }),
       });
       const data = await res.json();
@@ -71,7 +96,15 @@ export default function CouponDetailPage() {
 
   return (
     <div>
-      <AdminPageHeader title={`تعديل الكوبون ${coupon.code}`} description="تحديث حالة الكوبون وحدوده وربطه المباشر بالدفع." />
+      <AdminPageHeader title={`تعديل الكوبون ${coupon.code}`} description="تحديث الاستهداف، حدود الاستخدام، وتحليلات الأداء." />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KPI label="استخدامات ناجحة" value={String(coupon.analytics.purchaseCount)} />
+        <KPI label="مستخدمون فريدون" value={String(coupon.analytics.uniqueUsers)} />
+        <KPI label="إيراد محقق" value={formatCurrency(coupon.analytics.revenue)} />
+        <KPI label="إجمالي الخصم" value={formatCurrency(coupon.analytics.totalDiscount)} />
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[1fr,0.8fr]">
         <AdminCard>
           <form onSubmit={handleSubmit} className="grid gap-5">
@@ -94,7 +127,7 @@ export default function CouponDetailPage() {
               <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الوصف</label>
               <textarea name="description" rows={4} defaultValue={coupon.description} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
             </div>
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">نوع الخصم</label>
                 <select name="discountType" defaultValue={coupon.discountType} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none">
@@ -110,17 +143,33 @@ export default function CouponDetailPage() {
                 <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">حد الاستخدام</label>
                 <input name="usageLimit" type="number" defaultValue={coupon.usageLimit} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
               </div>
-            </div>
-            <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">تاريخ الانتهاء</label>
-                <input name="expiresAt" type="date" defaultValue={coupon.expiresAt.slice(0, 10)} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">ينطبق على</label>
-                <input name="appliesTo" defaultValue={coupon.appliesTo} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+                <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">لكل مستخدم</label>
+                <input name="maxUsesPerUser" type="number" min="1" defaultValue={coupon.maxUsesPerUser} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
               </div>
             </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">تاريخ الانتهاء</label>
+              <input name="expiresAt" type="date" defaultValue={coupon.expiresAt.slice(0, 10)} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+            </div>
+
+            <div className="rounded-2xl border border-[#E7DDD2] p-4">
+              <div className="mb-3 flex items-center gap-3">
+                <input id="all-courses" type="checkbox" checked={appliesToAll} onChange={(e) => setAppliesToAll(e.target.checked)} />
+                <label htmlFor="all-courses" className="text-sm font-medium text-[#6E5B4D]">ينطبق على جميع الدورات</label>
+              </div>
+              {!appliesToAll ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {coupon.availableCourses.map((course) => (
+                    <label key={course.id} className="flex items-center gap-3 rounded-xl border border-[#F1E7DC] px-3 py-2 text-sm text-[#4A3828]">
+                      <input type="checkbox" checked={selectedCourseIds.includes(course.id)} onChange={() => toggleCourse(course.id)} />
+                      <span>{course.title}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
             <button disabled={saving} className="rounded-2xl bg-[#0A2830] px-5 py-3 text-sm font-medium text-white disabled:opacity-60">{saving ? "جاري الحفظ..." : "حفظ التعديلات"}</button>
           </form>
         </AdminCard>
@@ -132,7 +181,8 @@ export default function CouponDetailPage() {
             <div>الاستخدام الحالي: <span className="font-semibold text-[#0A2830]">{coupon.usageCount} / {coupon.usageLimit || "∞"}</span></div>
             <div>ينتهي في: <span className="font-semibold text-[#0A2830]">{formatDate(coupon.expiresAt)}</span></div>
             <div>ينطبق على: <span className="font-semibold text-[#0A2830]">{coupon.appliesTo}</span></div>
-            <div className="rounded-2xl bg-[#F6FBFC] p-4 text-xs text-[#4E6971]">هذا الكوبون أصبح مرتبطًا فعليًا بقاعدة البيانات ويمكن استخدامه مباشرة أثناء الدفع.</div>
+            <div>حد الاستخدام لكل مستخدم: <span className="font-semibold text-[#0A2830]">{coupon.maxUsesPerUser}</span></div>
+            <div className="rounded-2xl bg-[#F6FBFC] p-4 text-xs text-[#4E6971]">تم تفعيل الاستهداف حسب الدورات ومنع تكرار الاستخدام فوق الحد المسموح لكل مستخدم.</div>
           </div>
         </AdminCard>
       </div>

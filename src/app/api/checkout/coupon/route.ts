@@ -17,9 +17,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "كود الخصم والدورة مطلوبان" }, { status: 400 });
   }
 
-  const [coupon, course] = await Promise.all([
+  const [coupon, course, userUses] = await Promise.all([
     prisma.coupon.findUnique({ where: { code } }),
     prisma.course.findUnique({ where: { id: courseId, isActive: true } }),
+    prisma.purchase.count({ where: { userId: session.user.id, status: "COMPLETED", coupon: { code } } }),
   ]);
 
   if (!coupon) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "الدورة غير موجودة" }, { status: 404 });
   }
 
-  const usable = canUseCoupon(coupon);
+  const usable = canUseCoupon(coupon, { courseId, userCompletedUses: userUses });
   if (!usable.ok) {
     return NextResponse.json({ error: usable.error }, { status: 400 });
   }
@@ -44,6 +45,9 @@ export async function POST(request: NextRequest) {
       description: coupon.description,
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
+      maxUsesPerUser: coupon.maxUsesPerUser,
+      appliesToAll: coupon.appliesToAll,
+      applicableCourseIds: coupon.applicableCourseIds,
     },
     course: {
       id: course.id,
