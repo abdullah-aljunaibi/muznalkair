@@ -9,11 +9,14 @@ import { orderStatusLabels, paymentMethodLabels } from "@/lib/admin/mock-data";
 interface Payment {
   id: string;
   amount: number;
+  originalAmount: number;
+  discountAmount: number;
   status: keyof typeof orderStatusLabels;
   paymentMethod: keyof typeof paymentMethodLabels;
   createdAt: string;
   user: { id: string; name: string; email: string };
   course: { id: string; title: string };
+  coupon?: { id: string; code: string } | null;
 }
 
 const availableStatuses = ["PENDING", "COMPLETED", "FAILED", "REFUNDED"] as const;
@@ -39,7 +42,7 @@ export default function PaymentsPage() {
   const stats = useMemo(() => ({
     completed: payments.filter((payment) => payment.status === "COMPLETED").reduce((sum, payment) => sum + payment.amount, 0),
     pendingCount: payments.filter((payment) => payment.status === "PENDING").length,
-    refunds: payments.filter((payment) => payment.status === "REFUNDED").length,
+    discounts: payments.reduce((sum, payment) => sum + payment.discountAmount, 0),
   }), [payments]);
 
   const updateStatus = async (paymentId: string, status: string) => {
@@ -65,13 +68,13 @@ export default function PaymentsPage() {
     <div>
       <AdminPageHeader
         title="إدارة المدفوعات"
-        description="سجل كامل للمدفوعات مع تعديل سريع للحالة ومتابعة التحويلات البنكية ودفعات Stripe."
+        description="سجل كامل للمدفوعات مع الكوبونات والخصومات وتعديل سريع للحالة."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <AdminCard><div className="text-sm text-[#7A6555]">الإيراد المحصل</div><div className="mt-2 text-3xl font-bold text-[#166534]">{formatCurrency(stats.completed)}</div></AdminCard>
         <AdminCard><div className="text-sm text-[#7A6555]">دفعات معلقة</div><div className="mt-2 text-3xl font-bold text-[#B7791F]">{stats.pendingCount}</div></AdminCard>
-        <AdminCard><div className="text-sm text-[#7A6555]">عمليات استرداد</div><div className="mt-2 text-3xl font-bold text-[#7C3AED]">{stats.refunds}</div></AdminCard>
+        <AdminCard><div className="text-sm text-[#7A6555]">إجمالي الخصومات</div><div className="mt-2 text-3xl font-bold text-[#7C3AED]">{formatCurrency(stats.discounts)}</div></AdminCard>
       </div>
 
       <AdminCard className="overflow-hidden p-0">
@@ -79,12 +82,13 @@ export default function PaymentsPage() {
           <div className="p-6 text-sm text-[#7A6555]">جاري تحميل سجلات الدفع...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[920px] text-sm">
+            <table className="min-w-[1080px] text-sm">
               <thead className="bg-[#0A2830] text-white">
                 <tr>
                   <th className="px-5 py-4 text-right font-medium">الطالبة</th>
                   <th className="px-5 py-4 text-right font-medium">الدورة</th>
                   <th className="px-5 py-4 text-right font-medium">المبلغ</th>
+                  <th className="px-5 py-4 text-right font-medium">الكوبون</th>
                   <th className="px-5 py-4 text-right font-medium">الطريقة</th>
                   <th className="px-5 py-4 text-right font-medium">الحالة</th>
                   <th className="px-5 py-4 text-right font-medium">تحديث سريع</th>
@@ -99,7 +103,11 @@ export default function PaymentsPage() {
                       <div className="text-xs text-[#7A6555]">{payment.user.email}</div>
                     </td>
                     <td className="px-5 py-4">{payment.course.title}</td>
-                    <td className="px-5 py-4 font-semibold text-[#0A2830]">{formatCurrency(payment.amount)}</td>
+                    <td className="px-5 py-4 font-semibold text-[#0A2830]">
+                      {formatCurrency(payment.amount)}
+                      {payment.discountAmount > 0 ? <div className="text-xs font-normal text-[#7A6555]">قبل الخصم {formatCurrency(payment.originalAmount)} • خصم {formatCurrency(payment.discountAmount)}</div> : null}
+                    </td>
+                    <td className="px-5 py-4">{payment.coupon?.code || "—"}</td>
                     <td className="px-5 py-4">{paymentMethodLabels[payment.paymentMethod]}</td>
                     <td className="px-5 py-4">
                       <StatusBadge

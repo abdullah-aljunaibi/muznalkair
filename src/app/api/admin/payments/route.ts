@@ -13,10 +13,16 @@ export async function GET() {
     include: {
       user: { select: { id: true, name: true, email: true } },
       course: { select: { id: true, title: true } },
+      coupon: { select: { id: true, code: true } },
     },
   });
 
-  return NextResponse.json(payments);
+  return NextResponse.json(
+    payments.map((payment) => ({
+      ...payment,
+      originalAmount: payment.amount + payment.discountAmount,
+    }))
+  );
 }
 
 export async function PATCH(req: NextRequest) {
@@ -39,8 +45,12 @@ export async function PATCH(req: NextRequest) {
     include: {
       user: { select: { id: true, name: true, email: true } },
       course: { select: { id: true, title: true } },
+      coupon: { select: { id: true, code: true } },
     },
   });
 
-  return NextResponse.json(payment);
+  return NextResponse.json({
+    ...payment,
+    originalAmount: payment.amount + payment.discountAmount,
+  });
 }

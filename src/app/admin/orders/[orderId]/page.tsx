@@ -11,16 +11,25 @@ import { orderStatusLabels, paymentMethodLabels } from "@/lib/admin/mock-data";
 interface OrderDetail {
   id: string;
   amount: number;
+  originalAmount: number;
+  discountAmount: number;
   status: keyof typeof orderStatusLabels;
   paymentMethod: keyof typeof paymentMethodLabels;
   stripeSessionId?: string | null;
   createdAt: string;
+  coupon?: {
+    id: string;
+    code: string;
+    description: string;
+    discountType: "PERCENTAGE" | "FIXED";
+    discountValue: number;
+  } | null;
   user: {
     id: string;
     name: string;
     email: string;
     createdAt: string;
-    purchases: Array<{ id: string; status: string; amount: number; createdAt: string }>;
+    purchases: Array<{ id: string; status: string; amount: number; discountAmount: number; createdAt: string }>;
   };
   course: {
     id: string;
@@ -82,14 +91,20 @@ export default function OrderDetailPage() {
       <Link href="/admin/orders" className="mb-4 inline-block text-sm text-[#9E7E2C] hover:underline">العودة إلى الطلبات</Link>
       <AdminPageHeader
         title={`تفاصيل الطلب #${order.id.slice(-8)}`}
-        description="عرض حالة الطلب والبيانات المرتبطة بالطالبة والدورة مع إمكانية التحديث اليدوي."
+        description="عرض حالة الطلب والبيانات المرتبطة بالطالبة والدورة والخصم مع إمكانية التحديث اليدوي."
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
         <AdminCard>
           <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">بيانات الطلب</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div><div className="text-sm text-[#7A6555]">المبلغ</div><div className="mt-1 text-xl font-bold">{formatCurrency(order.amount)}</div></div>
+            <div>
+              <div className="text-sm text-[#7A6555]">المبلغ المدفوع</div>
+              <div className="mt-1 text-xl font-bold">{formatCurrency(order.amount)}</div>
+              {order.discountAmount > 0 ? (
+                <div className="mt-1 text-xs text-[#7A6555]">قبل الخصم {formatCurrency(order.originalAmount)} • الخصم {formatCurrency(order.discountAmount)}</div>
+              ) : null}
+            </div>
             <div><div className="text-sm text-[#7A6555]">طريقة الدفع</div><div className="mt-1">{paymentMethodLabels[order.paymentMethod]}</div></div>
             <div><div className="text-sm text-[#7A6555]">تاريخ الإنشاء</div><div className="mt-1">{formatDate(order.createdAt)}</div></div>
             <div>
@@ -145,6 +160,17 @@ export default function OrderDetailPage() {
               <div className="text-[#7A6555]">{order.course.description}</div>
               <div><span className="text-[#7A6555]">إجمالي الدروس:</span> {order.course.totalLessons}</div>
               <div><span className="text-[#7A6555]">ظهور الدورة:</span> {order.course.isActive ? "منشورة" : "غير منشورة"}</div>
+            </div>
+          </AdminCard>
+
+          <AdminCard>
+            <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">بيانات الخصم</h2>
+            <div className="mt-4 space-y-2 text-sm">
+              <div><span className="text-[#7A6555]">الكوبون:</span> {order.coupon?.code || "لا يوجد"}</div>
+              <div><span className="text-[#7A6555]">قيمة الخصم:</span> {formatCurrency(order.discountAmount)}</div>
+              {order.coupon ? (
+                <div><span className="text-[#7A6555]">نوع الخصم:</span> {order.coupon.discountType === "PERCENTAGE" ? `${order.coupon.discountValue}%` : `${order.coupon.discountValue} ر.ع`}</div>
+              ) : null}
             </div>
           </AdminCard>
         </div>

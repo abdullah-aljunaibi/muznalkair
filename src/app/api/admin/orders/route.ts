@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
               { user: { name: { contains: search, mode: "insensitive" } } },
               { user: { email: { contains: search, mode: "insensitive" } } },
               { course: { title: { contains: search, mode: "insensitive" } } },
+              { coupon: { code: { contains: search, mode: "insensitive" } } },
             ],
           }
         : {}),
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
     include: {
       user: { select: { id: true, name: true, email: true } },
       course: { select: { id: true, title: true } },
+      coupon: { select: { id: true, code: true } },
     },
   });
 
@@ -36,12 +38,15 @@ export async function GET(req: NextRequest) {
     orders.map((order) => ({
       id: order.id,
       amount: order.amount,
+      originalAmount: order.amount + order.discountAmount,
+      discountAmount: order.discountAmount,
       status: order.status,
       paymentMethod: order.paymentMethod,
       stripeSessionId: order.stripeSessionId,
       createdAt: order.createdAt,
       student: order.user,
       course: order.course,
+      coupon: order.coupon,
     }))
   );
 }

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { isLessonUnlocked } from "@/lib/lessons";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -33,5 +34,12 @@ export async function GET(
     },
   });
 
-  return NextResponse.json({ lessons });
+  const completedFlags = lessons.map((lesson) => lesson.progress[0]?.completed ?? false);
+
+  return NextResponse.json({
+    lessons: lessons.map((lesson, index) => ({
+      ...lesson,
+      unlocked: isLessonUnlocked(index, completedFlags),
+    })),
+  });
 }

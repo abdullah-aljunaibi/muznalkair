@@ -9,12 +9,15 @@ import { orderStatusLabels, paymentMethodLabels } from "@/lib/admin/mock-data";
 interface Order {
   id: string;
   amount: number;
+  originalAmount: number;
+  discountAmount: number;
   status: keyof typeof orderStatusLabels;
   paymentMethod: keyof typeof paymentMethodLabels;
   stripeSessionId?: string | null;
   createdAt: string;
   student: { id: string; name: string; email: string };
   course: { id: string; title: string };
+  coupon?: { id: string; code: string } | null;
 }
 
 export default function OrdersPage() {
@@ -55,7 +58,7 @@ export default function OrdersPage() {
     <div>
       <AdminPageHeader
         title="إدارة الطلبات"
-        description="قائمة الطلبات مع إمكانية مراجعة الحالة والدخول لتفاصيل كل طلب وتحديث الدفع يدويًا عند الحاجة."
+        description="قائمة الطلبات مع مراجعة حالة الدفع والخصومات المطبقة وتفاصيل كل طلب."
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -70,7 +73,7 @@ export default function OrdersPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث باسم الطالبة أو البريد أو الدورة"
+            placeholder="بحث باسم الطالبة أو البريد أو الدورة أو الكوبون"
             className="rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none"
           />
           <select
@@ -101,6 +104,7 @@ export default function OrdersPage() {
                   <th className="px-5 py-4 text-right font-medium">الطالبة</th>
                   <th className="px-5 py-4 text-right font-medium">الدورة</th>
                   <th className="px-5 py-4 text-right font-medium">المبلغ</th>
+                  <th className="px-5 py-4 text-right font-medium">الكوبون</th>
                   <th className="px-5 py-4 text-right font-medium">طريقة الدفع</th>
                   <th className="px-5 py-4 text-right font-medium">الحالة</th>
                   <th className="px-5 py-4 text-right font-medium">التاريخ</th>
@@ -116,7 +120,15 @@ export default function OrdersPage() {
                       <div className="text-xs text-[#7A6555]">{order.student.email}</div>
                     </td>
                     <td className="px-5 py-4">{order.course.title}</td>
-                    <td className="px-5 py-4 font-semibold text-[#0A2830]">{formatCurrency(order.amount)}</td>
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-[#0A2830]">{formatCurrency(order.amount)}</div>
+                      {order.discountAmount > 0 ? (
+                        <div className="text-xs text-[#7A6555]">
+                          قبل الخصم {formatCurrency(order.originalAmount)} • خصم {formatCurrency(order.discountAmount)}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-5 py-4">{order.coupon?.code || "—"}</td>
                     <td className="px-5 py-4">{paymentMethodLabels[order.paymentMethod]}</td>
                     <td className="px-5 py-4">
                       <StatusBadge

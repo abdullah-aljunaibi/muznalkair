@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isLessonUnlocked } from "@/lib/lessons";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -16,7 +17,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "lessonId required" }, { status: 400 });
   }
 
-  // Get lesson to find courseId
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
     include: { course: true },
@@ -26,7 +26,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
   }
 
-  // Upsert lesson progress
+  const purchase = await prisma.purchase.findFirst({
+    where: { userId, courseId: lesson.courseId, status: "COMPLETED" },
+    select: { id: true },
+  });
+
+  if (!purchase) {
+    return NextResponse.json({ error: "Course not purchased" }, { status: 403 });
+  }
+
+  const orderedLessons = await prisma.lesson.findMany({
+    where: { courseId: lesson.courseId },
+    orderBy: { order: "asc" },
+    include: { progress: { where: { userId } } },
+  });
+
+  const currentIndex = orderedLessons.findIndex((item) => item.id === lessonId);
+  const completedFlags = orderedLessons.map((item) => item.progress[0]?.completed ?? false);
+
+  if (currentIndex === -1 || !isLessonUnlocked(currentIndex, completedFlags)) {
+    return NextResponse.json({ error: "يجب إكمال الدرس السابق أولًا" }, { status: 403 });
+  }
+
   const lessonProgress = await prisma.lessonProgress.upsert({
     where: { userId_lessonId: { userId, lessonId } },
     update: {
@@ -43,34 +64,23 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // Recalculate course progress
-  const courseId = lesson.courseId;
   const allLessons = await prisma.lesson.findMany({
-    where: { courseId },
-    include: {
-      progress: { where: { userId } },
-    },
+    where: { courseId: lesson.courseId },
+    include: { progress: { where: { userId } } },
   });
 
   const totalLessons = allLessons.length;
-  const completedLessons = allLessons.filter(
-    (l) => l.progress[0]?.completed
-  ).length;
-  const progressPercentage =
-    totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const completedLessons = allLessons.filter((l) => l.progress[0]?.completed).length;
+  const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-  // Calculate total minutes watched
   const allProgress = await prisma.lessonProgress.findMany({
-    where: { userId, lesson: { courseId } },
+    where: { userId, lesson: { courseId: lesson.courseId } },
     include: { lesson: true },
   });
-  const totalMinutesWatched = Math.round(
-    allProgress.reduce((acc, p) => acc + p.watchedSecs / 60, 0)
-  );
+  const totalMinutesWatched = Math.round(allProgress.reduce((acc, p) => acc + p.watchedSecs / 60, 0));
 
-  // Upsert course progress
   const courseProgress = await prisma.progress.upsert({
-    where: { userId_courseId: { userId, courseId } },
+    where: { userId_courseId: { userId, courseId: lesson.courseId } },
     update: {
       completedLessons,
       totalMinutesWatched,
@@ -78,7 +88,7 @@ export async function POST(request: NextRequest) {
     },
     create: {
       userId,
-      courseId,
+      courseId: lesson.courseId,
       completedLessons,
       totalMinutesWatched,
       lastAccessedAt: new Date(),

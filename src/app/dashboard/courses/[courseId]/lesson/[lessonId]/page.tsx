@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { firstUnlockedLessonIndex, isLessonUnlocked } from "@/lib/lessons";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import LessonPlayer from "./LessonPlayer";
@@ -14,14 +15,12 @@ export default async function LessonPage({
   const { courseId, lessonId } = await params;
   const userId = session.user.id;
 
-  // Check purchase
   const purchase = await prisma.purchase.findFirst({
     where: { userId, courseId, status: "COMPLETED" },
   });
 
   if (!purchase) redirect("/checkout?courseId=" + courseId);
 
-  // Load course with all lessons
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: {
@@ -37,21 +36,20 @@ export default async function LessonPage({
 
   if (!course) redirect("/dashboard/courses");
 
-  const lesson = course.lessons.find((l) => l.id === lessonId);
-  if (!lesson) redirect(`/dashboard/courses/${courseId}`);
+  const completedFlags = course.lessons.map((l) => l.progress[0]?.completed ?? false);
+  const lessonIndex = course.lessons.findIndex((l) => l.id === lessonId);
+  const unlockedIndex = firstUnlockedLessonIndex(completedFlags);
 
-  const currentIndex = course.lessons.findIndex((l) => l.id === lessonId);
-  const prevLesson = currentIndex > 0 ? course.lessons[currentIndex - 1] : null;
-  const nextLesson =
-    currentIndex < course.lessons.length - 1
-      ? course.lessons[currentIndex + 1]
-      : null;
+  if (lessonIndex === -1) redirect(`/dashboard/courses/${courseId}`);
+  if (!isLessonUnlocked(lessonIndex, completedFlags)) {
+    redirect(`/dashboard/courses/${courseId}/lesson/${course.lessons[unlockedIndex].id}`);
+  }
 
-  const completedCount = course.lessons.filter(
-    (l) => l.progress[0]?.completed
-  ).length;
+  const lesson = course.lessons[lessonIndex];
+  const prevLesson = lessonIndex > 0 ? course.lessons[lessonIndex - 1] : null;
+  const nextLesson = lessonIndex < course.lessons.length - 1 ? course.lessons[lessonIndex + 1] : null;
+  const completedCount = course.lessons.filter((l) => l.progress[0]?.completed).length;
 
-  // Update lastAccessedAt
   await prisma.progress.upsert({
     where: { userId_courseId: { userId, courseId } },
     update: { lastAccessedAt: new Date() },
@@ -63,7 +61,6 @@ export default async function LessonPage({
     },
   });
 
-  // Serialize for client component
   const lessonData = {
     id: lesson.id,
     title: lesson.title,
@@ -80,12 +77,13 @@ export default async function LessonPage({
     })),
   };
 
-  const allLessons = course.lessons.map((l) => ({
+  const allLessons = course.lessons.map((l, index) => ({
     id: l.id,
     title: l.title,
     duration: l.duration,
     order: l.order,
     isCompleted: l.progress[0]?.completed ?? false,
+    unlocked: isLessonUnlocked(index, completedFlags),
   }));
 
   return (

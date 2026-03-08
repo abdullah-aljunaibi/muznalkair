@@ -24,7 +24,7 @@ export async function GET(
           createdAt: true,
           purchases: {
             orderBy: { createdAt: "desc" },
-            select: { id: true, status: true, amount: true, createdAt: true },
+            select: { id: true, status: true, amount: true, discountAmount: true, createdAt: true },
           },
         },
       },
@@ -37,6 +37,15 @@ export async function GET(
           isActive: true,
         },
       },
+      coupon: {
+        select: {
+          id: true,
+          code: true,
+          description: true,
+          discountType: true,
+          discountValue: true,
+        },
+      },
     },
   });
 
@@ -44,7 +53,10 @@ export async function GET(
     return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
   }
 
-  return NextResponse.json(order);
+  return NextResponse.json({
+    ...order,
+    originalAmount: order.amount + order.discountAmount,
+  });
 }
 
 export async function PATCH(
