@@ -423,9 +423,41 @@ async function main() {
     }),
   ]);
 
+  const coupons = await Promise.all([
+    prisma.coupon.upsert({
+      where: { code: "RAMADAN10" },
+      update: {},
+      create: {
+        code: "RAMADAN10",
+        description: "خصم موسمي لدورات رمضان",
+        discountType: "PERCENTAGE",
+        discountValue: 10,
+        status: "ACTIVE",
+        expiresAt: new Date("2026-04-01T00:00:00.000Z"),
+        usageLimit: 100,
+        appliesTo: "جميع الدورات المنشورة",
+      },
+    }),
+    prisma.coupon.upsert({
+      where: { code: "WELCOME5" },
+      update: {},
+      create: {
+        code: "WELCOME5",
+        description: "خصم ترحيبي للطالبات الجديدات",
+        discountType: "FIXED",
+        discountValue: 5,
+        status: "ACTIVE",
+        expiresAt: new Date("2026-06-01T00:00:00.000Z"),
+        usageLimit: 50,
+        appliesTo: "جميع الدورات",
+      },
+    }),
+  ]);
+
   console.log("✅ Seed complete!");
   console.log(`  - ${courses.length} courses`);
   console.log(`  - ${tajweedLessons.length + hifzLessons.length + qiraahLessons.length} lessons`);
+  console.log(`  - ${coupons.length} coupons`);
 }
 
 main()

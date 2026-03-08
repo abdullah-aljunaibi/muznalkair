@@ -1,72 +1,147 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import MuznLogo from "@/components/MuznLogo";
-import Link from "next/link";
 
-const programs = [
-  {
-    id: "general",
-    title: "المقرأة العامة",
-    description: "تصحيح التلاوة لجميع المستويات مع تعلّم أحكام التجويد",
-    price: "٥",
-    priceNum: 5,
-    currency: "ر.ع.",
-    features: ["حلقات يومية", "تصحيح تلاوة", "شهادة إتمام"],
-  },
-  {
-    id: "mothers",
-    title: "مقرأة الأمهات",
-    description: "مخصصة للأمهات بأوقات مرنة تناسب جدولهن اليومي",
-    price: "٥",
-    priceNum: 5,
-    currency: "ر.ع.",
-    features: ["أوقات مرنة", "دعم خاص للأمهات", "حلقات صغيرة"],
+type Course = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  totalLessons: number;
+};
+
+type CouponPreview = {
+  coupon: {
+    id: string;
+    code: string;
+    description: string;
+    discountType: "PERCENTAGE" | "FIXED";
+    discountValue: number;
+  };
+  course: {
+    id: string;
+    title: string;
+    originalPrice: number;
+    finalPrice: number;
+    discountAmount: number;
+    currency: string;
+  };
+};
+
+const courseMeta: Record<string, { features: string[]; popular?: boolean }> = {
+  course_quran_reading_001: {
+    features: ["منهج مبسّط", "تطبيق عملي", "مناسب للمبتدئات"],
     popular: true,
   },
-  {
-    id: "atrujah",
-    title: "برنامج الأترجة",
-    description: "لتحفيظ القرآن الكريم بمسارات متعددة",
-    price: "١٠",
-    priceNum: 10,
-    currency: "ر.ع.",
-    features: ["٣ مسارات حفظ", "متابعة فردية", "اختبارات دورية"],
+  course_tajweed_001: {
+    features: ["أحكام التجويد", "تدريب عملي", "شهادة إتمام"],
   },
-];
+  course_hifz_001: {
+    features: ["خطة حفظ", "متابعة دورية", "تفسير مختصر"],
+  },
+};
+
+function formatOmr(value: number) {
+  return `${value.toFixed(3)} ر.ع`;
+}
 
 export default function CheckoutPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponPreview, setCouponPreview] = useState<CouponPreview | null>(null);
+  const [couponCourseId, setCouponCourseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
+      return;
+    }
+
+    if (status === "authenticated") {
+      fetch("/api/checkout/options")
+        .then(async (res) => {
+          if (!res.ok) throw new Error();
+          return res.json();
+        })
+        .then(setCourses)
+        .catch(() => toast.error("تعذر تحميل الدورات المتاحة"))
+        .finally(() => setLoadingCourses(false));
     }
   }, [status, router]);
 
-  const handleCheckout = async (programId: string) => {
+  const couponSummary = useMemo(() => {
+    if (!couponPreview) return null;
+    return `${couponPreview.coupon.code} — خصم ${formatOmr(couponPreview.course.discountAmount)}`;
+  }, [couponPreview]);
+
+  async function applyCoupon(courseId: string) {
+    if (!couponCode.trim()) {
+      toast.error("أدخلي كود الخصم أولًا");
+      return;
+    }
+
+    setCouponLoading(true);
+    try {
+      const res = await fetch("/api/checkout/coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode, courseId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponPreview(null);
+        setCouponCourseId(null);
+        throw new Error(data.error || "تعذر تطبيق الكوبون");
+      }
+
+      setCouponPreview(data);
+      setCouponCourseId(courseId);
+      toast.success("تم تطبيق كود الخصم");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر تطبيق الكوبون");
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  const handleCheckout = async (courseId: string) => {
     setLoading(true);
-    setSelectedProgram(programId);
+    setSelectedProgram(courseId);
 
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId: programId }),
+        body: JSON.stringify({
+          courseId,
+          couponCode: couponCourseId === courseId ? couponCode : undefined,
+        }),
       });
 
       const data = await res.json();
 
+      if (!res.ok) {
+        toast.error(data.error || "حدث خطأ أثناء إنشاء جلسة الدفع");
+        return;
+      }
+
       if (data.url) {
         window.location.href = data.url;
       } else {
-        toast.error(data.error || "حدث خطأ أثناء إنشاء جلسة الدفع");
+        toast.error("حدث خطأ أثناء إنشاء جلسة الدفع");
       }
     } catch {
       toast.error("حدث خطأ ما، يرجى المحاولة مجددًا");
@@ -76,9 +151,9 @@ export default function CheckoutPage() {
     }
   };
 
-  if (status === "loading") {
+  if (status === "loading" || (status === "authenticated" && loadingCourses)) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#F5F0E8" }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: "#F5F0E8" }}>
         <div className="text-center">
           <MuznLogo size={56} />
           <p className="mt-4 text-sm" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
@@ -91,18 +166,17 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#F5F0E8" }} dir="rtl">
-      {/* Header */}
-      <div className="bg-white border-b border-[#E5E7EB] px-4 py-4">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+      <div className="border-b border-[#E5E7EB] bg-white px-4 py-4">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between">
           <Link href="/" className="flex items-center gap-3" aria-label="العودة إلى الصفحة الرئيسية">
             <MuznLogo size={36} ariaLabel="شعار مقرأة مزن الخير" />
-            <span className="text-[#1B6B7A] font-bold" style={{ fontFamily: "var(--font-amiri)" }}>
+            <span className="font-bold text-[#1B6B7A]" style={{ fontFamily: "var(--font-amiri)" }}>
               مقرأة مُزن الخير
             </span>
           </Link>
           <Link
             href="/dashboard"
-            className="min-h-11 flex items-center text-sm hover:underline"
+            className="flex min-h-11 items-center text-sm hover:underline"
             aria-label="الانتقال إلى لوحة التحكم"
             style={{ fontFamily: "var(--font-tajawal)", color: "#1B6B7A" }}
           >
@@ -111,102 +185,136 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <h1
-            className="text-3xl md:text-4xl font-bold mb-3"
-            style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}
-          >
-            اختاري البرنامج المناسب
+      <div className="mx-auto max-w-[1200px] px-4 py-12">
+        <div className="mb-10 text-center">
+          <h1 className="mb-3 text-3xl font-bold md:text-4xl" style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}>
+            اختاري الدورة المناسبة
           </h1>
           <p className="text-base" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
-            سجّلي في أحد برامجنا وابدئي رحلتك مع القرآن الكريم
+            التسجيل الآن متصل بقاعدة البيانات والدفع المباشر، مع دعم أكواد الخصم.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {programs.map((program) => (
-            <div
-              key={program.id}
-              className="relative bg-white rounded-2xl p-6 flex flex-col"
-              style={{
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                border: program.popular ? "2px solid #1B6B7A" : "2px solid transparent",
+        <div className="mx-auto mb-8 max-w-2xl rounded-2xl bg-white p-5" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
+          <div className="grid gap-3 md:grid-cols-[1fr,auto]">
+            <input
+              value={couponCode}
+              onChange={(e) => {
+                setCouponCode(e.target.value.toUpperCase());
+                if (couponPreview && couponCode !== e.target.value.toUpperCase()) {
+                  setCouponPreview(null);
+                  setCouponCourseId(null);
+                }
               }}
-            >
-              {program.popular && (
-                <div
-                  className="absolute -top-3 right-6 px-3 py-1 rounded-full text-xs font-bold text-white"
-                  style={{ background: "#D4AF37", fontFamily: "var(--font-tajawal)" }}
-                >
-                  الأكثر طلبًا
-                </div>
-              )}
-
-              <h3
-                className="text-xl font-bold mb-2"
-                style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}
-              >
-                {program.title}
-              </h3>
-              <p
-                className="text-sm mb-4 leading-relaxed"
-                style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}
-              >
-                {program.description}
-              </p>
-
-              {/* Price */}
-              <div className="flex items-baseline gap-1 mb-6">
-                <span
-                  className="text-3xl font-bold"
-                  style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}
-                >
-                  {program.price}
-                </span>
-                <span
-                  className="text-sm"
-                  style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}
-                >
-                  {program.currency} / شهريًا
-                </span>
-              </div>
-
-              {/* Features */}
-              <ul className="flex flex-col gap-2 mb-6 flex-1">
-                {program.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#1B6B7A">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                    </svg>
-                    <span
-                      className="text-sm"
-                      style={{ fontFamily: "var(--font-tajawal)", color: "#4A5568" }}
-                    >
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => handleCheckout(program.id)}
-                disabled={loading}
-                className="min-h-11 w-full rounded-xl py-3 font-medium text-white transition-all duration-200 disabled:opacity-70"
-                style={{
-                  background: program.popular ? "#1B6B7A" : "#3A8D9E",
-                  fontFamily: "var(--font-tajawal)",
-                }}
-              >
-                {loading && selectedProgram === program.id ? "جارٍ التحميل..." : "اشتركي الآن"}
-              </button>
+              placeholder="أدخلي كود الخصم"
+              className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 uppercase outline-none"
+              style={{ fontFamily: "var(--font-tajawal)" }}
+            />
+            <div className="text-xs text-[#7A6555] md:self-center" style={{ fontFamily: "var(--font-tajawal)" }}>
+              طبّقي الكود على الدورة التي تختارينها من البطاقات أدناه.
             </div>
-          ))}
+          </div>
+          {couponSummary ? (
+            <p className="mt-3 text-sm text-[#1B6B7A]" style={{ fontFamily: "var(--font-tajawal)" }}>
+              {couponSummary}
+            </p>
+          ) : null}
         </div>
 
-        {/* WhatsApp alternative */}
-        <div className="max-w-md mx-auto mt-8 text-center">
-          <p className="text-sm mb-3" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+          {courses.map((course) => {
+            const meta = courseMeta[course.id] || {
+              features: [`${course.totalLessons} دروس`, "وصول فوري", "دعم مستمر"],
+            };
+            const pricing = couponPreview && couponCourseId === course.id ? couponPreview.course : null;
+
+            return (
+              <div
+                key={course.id}
+                className="relative flex flex-col rounded-2xl bg-white p-6"
+                style={{
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  border: meta.popular ? "2px solid #1B6B7A" : "2px solid transparent",
+                }}
+              >
+                {meta.popular ? (
+                  <div
+                    className="absolute -top-3 right-6 rounded-full px-3 py-1 text-xs font-bold text-white"
+                    style={{ background: "#D4AF37", fontFamily: "var(--font-tajawal)" }}
+                  >
+                    الأكثر طلبًا
+                  </div>
+                ) : null}
+
+                <h3 className="mb-2 text-xl font-bold" style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}>
+                  {course.title}
+                </h3>
+                <p className="mb-4 text-sm leading-relaxed" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
+                  {course.description}
+                </p>
+
+                <div className="mb-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold" style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}>
+                    {pricing ? formatOmr(pricing.finalPrice) : formatOmr(course.price)}
+                  </span>
+                  <span className="text-sm" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
+                    دفعة واحدة
+                  </span>
+                </div>
+
+                {pricing ? (
+                  <div className="mb-4 rounded-xl bg-[#F6FBFC] p-3 text-sm" style={{ fontFamily: "var(--font-tajawal)" }}>
+                    <div className="text-[#6B7280] line-through">قبل الخصم: {formatOmr(pricing.originalPrice)}</div>
+                    <div className="font-medium text-[#1B6B7A]">الخصم: {formatOmr(pricing.discountAmount)}</div>
+                  </div>
+                ) : (
+                  <div className="mb-4 text-xs text-[#7A6555]" style={{ fontFamily: "var(--font-tajawal)" }}>
+                    {course.totalLessons} دروس
+                  </div>
+                )}
+
+                <ul className="mb-6 flex flex-1 flex-col gap-2">
+                  {meta.features.map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1B6B7A">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                      </svg>
+                      <span className="text-sm" style={{ fontFamily: "var(--font-tajawal)", color: "#4A5568" }}>
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mb-3 grid gap-3">
+                  <button
+                    onClick={() => applyCoupon(course.id)}
+                    disabled={couponLoading || !couponCode.trim()}
+                    className="min-h-11 w-full rounded-xl border border-[#1B6B7A] py-3 font-medium text-[#1B6B7A] transition-all duration-200 disabled:opacity-60"
+                    style={{ fontFamily: "var(--font-tajawal)" }}
+                  >
+                    {couponLoading && couponCourseId !== course.id ? "جارٍ التحقق..." : "تطبيق كود الخصم"}
+                  </button>
+
+                  <button
+                    onClick={() => handleCheckout(course.id)}
+                    disabled={loading}
+                    className="min-h-11 w-full rounded-xl py-3 font-medium text-white transition-all duration-200 disabled:opacity-70"
+                    style={{
+                      background: meta.popular ? "#1B6B7A" : "#3A8D9E",
+                      fontFamily: "var(--font-tajawal)",
+                    }}
+                  >
+                    {loading && selectedProgram === course.id ? "جارٍ التحويل للدفع..." : "اشتركي الآن"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mx-auto mt-8 max-w-md text-center">
+          <p className="mb-3 text-sm" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
             أو يمكنك التسجيل عبر واتساب
           </p>
           <a

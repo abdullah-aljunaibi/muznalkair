@@ -1,41 +1,60 @@
 import { auth } from "@/lib/auth";
-import { couponsSeed } from "@/lib/admin/mock-data";
+import { prisma } from "@/lib/prisma";
+import { resolveCouponStatus, validateCouponInput } from "@/lib/coupons";
 import { NextRequest, NextResponse } from "next/server";
+
+function ensureAdmin(role?: string) {
+  return role === "ADMIN";
+}
 
 export async function GET() {
   const session = await auth();
-  if ((session?.user as { role?: string })?.role !== "ADMIN") {
+  if (!ensureAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json(couponsSeed);
+  const coupons = await prisma.coupon.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(
+    coupons.map((coupon) => ({
+      ...coupon,
+      status: resolveCouponStatus(coupon),
+    }))
+  );
 }
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if ((session?.user as { role?: string })?.role !== "ADMIN") {
+  if (!ensureAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
-  const coupon = {
-    id: `coupon_${Date.now()}`,
-    code: body.code,
-    description: body.description || "",
-    discountType: body.discountType || "PERCENTAGE",
-    discountValue: Number(body.discountValue || 0),
-    status: body.status || "ACTIVE",
-    expiresAt: body.expiresAt,
-    usageCount: 0,
-    usageLimit: Number(body.usageLimit || 0),
-    appliesTo: body.appliesTo || "جميع الدورات",
-    createdAt: new Date().toISOString(),
-  };
+  const parsed = validateCouponInput(body);
+
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const existing = await prisma.coupon.findUnique({
+    where: { code: parsed.data.code },
+    select: { id: true },
+  });
+
+  if (existing) {
+    return NextResponse.json({ error: "كود الخصم مستخدم بالفعل" }, { status: 409 });
+  }
+
+  const coupon = await prisma.coupon.create({
+    data: parsed.data,
+  });
 
   return NextResponse.json(
     {
       ...coupon,
-      note: "TODO: ربط إنشاء الكوبونات بقاعدة البيانات لاحقًا. الاستجابة الحالية مهيأة لواجهة الإدارة فقط.",
+      status: resolveCouponStatus(coupon),
     },
     { status: 201 }
   );

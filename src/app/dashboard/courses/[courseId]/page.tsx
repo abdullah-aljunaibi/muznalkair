@@ -35,10 +35,6 @@ export default async function CourseOverviewPage({
 
   if (!course) redirect("/dashboard/courses");
 
-  const progress = await prisma.progress.findUnique({
-    where: { userId_courseId: { userId, courseId } },
-  });
-
   const totalLessons = course.lessons.length;
   const completedLessons = course.lessons.filter(
     (l) => l.progress[0]?.completed

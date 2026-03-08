@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { calculateDiscount, canUseCoupon, normalizeCouponCode } from "@/lib/coupons";
 import Stripe from "stripe";
 
 const getStripe = () =>
@@ -11,10 +12,7 @@ export async function POST(request: NextRequest) {
     const stripe = getStripe();
     if (!stripe) {
       console.warn("Checkout requested but STRIPE_SECRET_KEY is missing.");
-      return NextResponse.json(
-        { error: "خدمة الدفع غير مهيأة حاليًا" },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "خدمة الدفع غير مهيأة حاليًا" }, { status: 503 });
     }
 
     const session = await auth();
@@ -23,13 +21,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { courseId } = body;
+    const courseId = String(body.courseId || "");
+    const couponCode = body.couponCode ? normalizeCouponCode(String(body.couponCode)) : "";
 
     if (!courseId) {
-      return NextResponse.json(
-        { error: "معرّف الدورة مطلوب" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "معرّف الدورة مطلوب" }, { status: 400 });
     }
 
     const course = await prisma.course.findUnique({
@@ -37,10 +33,37 @@ export async function POST(request: NextRequest) {
     });
 
     if (!course) {
-      return NextResponse.json(
-        { error: "الدورة غير موجودة" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "الدورة غير موجودة" }, { status: 404 });
+    }
+
+    const existingPurchase = await prisma.purchase.findFirst({
+      where: { userId: session.user.id, courseId, status: "COMPLETED" },
+      select: { id: true },
+    });
+
+    if (existingPurchase) {
+      return NextResponse.json({ error: "لقد اشتركتِ في هذه الدورة بالفعل" }, { status: 409 });
+    }
+
+    let couponId = "";
+    let discountAmount = 0;
+    let finalAmount = course.price;
+
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
+      if (!coupon) {
+        return NextResponse.json({ error: "كود الخصم غير صحيح" }, { status: 404 });
+      }
+
+      const usable = canUseCoupon(coupon);
+      if (!usable.ok) {
+        return NextResponse.json({ error: usable.error }, { status: 400 });
+      }
+
+      couponId = coupon.id;
+      const pricing = calculateDiscount(coupon, course);
+      discountAmount = pricing.discountAmount;
+      finalAmount = pricing.finalAmount;
     }
 
     const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
@@ -55,9 +78,11 @@ export async function POST(request: NextRequest) {
             currency: "omr",
             product_data: {
               name: course.title,
-              description: course.description,
+              description: couponCode
+                ? `${course.description}\nكود الخصم المطبق: ${couponCode}`
+                : course.description,
             },
-            unit_amount: Math.round(course.price * 1000), // OMR in baisa
+            unit_amount: Math.round(finalAmount * 1000),
           },
           quantity: 1,
         },
@@ -65,17 +90,25 @@ export async function POST(request: NextRequest) {
       metadata: {
         courseId: course.id,
         userId: session.user.id,
+        couponId,
+        couponCode,
+        discountAmount: discountAmount.toString(),
+        originalAmount: course.price.toString(),
       },
       success_url: `${baseUrl}/dashboard?payment=success`,
       cancel_url: `${baseUrl}/checkout`,
     });
 
-    return NextResponse.json({ url: checkoutSession.url });
+    return NextResponse.json({
+      url: checkoutSession.url,
+      pricing: {
+        originalAmount: course.price,
+        discountAmount,
+        finalAmount,
+      },
+    });
   } catch (error) {
     console.error("Checkout error:", error);
-    return NextResponse.json(
-      { error: "حدث خطأ أثناء إنشاء جلسة الدفع" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "حدث خطأ أثناء إنشاء جلسة الدفع" }, { status: 500 });
   }
 }

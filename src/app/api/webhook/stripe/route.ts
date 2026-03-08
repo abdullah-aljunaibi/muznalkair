@@ -15,13 +15,8 @@ export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!stripe || !webhookSecret) {
-    console.warn(
-      "Stripe webhook called without STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET"
-    );
-    return NextResponse.json(
-      { error: "Stripe webhook is not configured" },
-      { status: 503 }
-    );
+    console.warn("Stripe webhook called without STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET");
+    return NextResponse.json({ error: "Stripe webhook is not configured" }, { status: 503 });
   }
 
   const body = await request.text();
@@ -45,6 +40,8 @@ export async function POST(request: NextRequest) {
 
     const userId = session.metadata?.userId;
     const courseId = session.metadata?.courseId;
+    const couponId = session.metadata?.couponId || null;
+    const discountAmount = Number(session.metadata?.discountAmount || 0);
 
     if (userId && courseId) {
       try {
@@ -59,14 +56,18 @@ export async function POST(request: NextRequest) {
           create: {
             userId,
             courseId,
+            couponId,
             stripeSessionId: session.id,
             amount,
+            discountAmount,
             status: "COMPLETED",
             paymentMethod: "STRIPE",
           },
           update: {
             status: "COMPLETED",
             amount,
+            discountAmount,
+            couponId,
           },
         });
 
@@ -79,6 +80,13 @@ export async function POST(request: NextRequest) {
           },
           update: { lastAccessedAt: new Date() },
         });
+
+        if (!existed && couponId) {
+          await prisma.coupon.update({
+            where: { id: couponId },
+            data: { usageCount: { increment: 1 } },
+          }).catch(() => null);
+        }
 
         if (!existed && purchase.status === "COMPLETED") {
           const user = await prisma.user.findUnique({
@@ -94,19 +102,13 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log(
-          `Stripe webhook processed: session=${session.id} user=${userId} course=${courseId}`
-        );
+        console.log(`Stripe webhook processed: session=${session.id} user=${userId} course=${courseId}`);
       } catch (error) {
         console.error("Error creating purchase record:", error);
         return NextResponse.json({ error: "Database error" }, { status: 500 });
       }
     } else {
-      console.warn(
-        "Stripe webhook missing metadata",
-        session.id,
-        session.metadata
-      );
+      console.warn("Stripe webhook missing metadata", session.id, session.metadata);
     }
   }
 

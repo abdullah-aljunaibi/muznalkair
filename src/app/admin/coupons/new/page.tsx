@@ -31,11 +31,12 @@ export default function NewCouponPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error();
-      toast.success("تم تجهيز الكوبون في واجهة الإدارة");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "تعذر حفظ الكوبون");
+      toast.success("تم إنشاء الكوبون بنجاح");
       router.push("/admin/coupons");
-    } catch {
-      toast.error("تعذر حفظ الكوبون");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر حفظ الكوبون");
     } finally {
       setSaving(false);
     }
@@ -43,7 +44,7 @@ export default function NewCouponPage() {
 
   return (
     <div>
-      <AdminPageHeader title="إضافة كوبون" description="إنشاء كوبون خصم جديد لواجهة الإدارة V1." />
+      <AdminPageHeader title="إضافة كوبون" description="إنشاء كوبون خصم جديد وربطه بالدفع مباشرة." />
       <AdminCard className="max-w-3xl">
         <form onSubmit={handleSubmit} className="grid gap-5">
           <div className="grid gap-5 md:grid-cols-2">
@@ -66,7 +67,7 @@ export default function NewCouponPage() {
           <div className="grid gap-5 md:grid-cols-3">
             <div>
               <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">قيمة الخصم</label>
-              <input name="discountValue" type="number" step="0.01" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+              <input name="discountValue" type="number" step="0.001" required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الحد الأقصى للاستخدام</label>

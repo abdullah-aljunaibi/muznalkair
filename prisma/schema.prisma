@@ -9,12 +9,12 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(cuid())
+  id             String               @id @default(cuid())
   name           String
-  email          String           @unique
+  email          String               @unique
   password       String
-  role           Role             @default(STUDENT)
-  createdAt      DateTime         @default(now())
+  role           Role                 @default(STUDENT)
+  createdAt      DateTime             @default(now())
   purchases      Purchase[]
   progress       Progress[]
   reviews        Review[]
@@ -46,13 +46,16 @@ model Purchase {
   id              String         @id @default(cuid())
   userId          String
   courseId        String
+  couponId        String?
   stripeSessionId String?        @unique
   amount          Float
+  discountAmount  Float          @default(0)
   status          PurchaseStatus @default(PENDING)
   paymentMethod   PaymentMethod  @default(STRIPE)
   createdAt       DateTime       @default(now())
   user            User           @relation(fields: [userId], references: [id])
   course          Course         @relation(fields: [courseId], references: [id])
+  coupon          Coupon?        @relation(fields: [couponId], references: [id])
 }
 
 enum PurchaseStatus {
@@ -65,6 +68,34 @@ enum PurchaseStatus {
 enum PaymentMethod {
   STRIPE
   WHATSAPP_BANK_TRANSFER
+}
+
+model Coupon {
+  id            String             @id @default(cuid())
+  code          String             @unique
+  description   String             @default("")
+  discountType  CouponDiscountType
+  discountValue Float
+  status        CouponStatus       @default(ACTIVE)
+  expiresAt     DateTime
+  usageCount    Int                @default(0)
+  usageLimit    Int                @default(0)
+  appliesTo     String             @default("جميع الدورات")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  purchases     Purchase[]
+}
+
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum CouponStatus {
+  ACTIVE
+  SCHEDULED
+  EXPIRED
+  DISABLED
 }
 
 model Progress {

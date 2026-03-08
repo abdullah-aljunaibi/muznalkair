@@ -35,17 +35,20 @@ export default function CouponsPage() {
     <div>
       <AdminPageHeader
         title="إدارة الكوبونات"
-        description="واجهة V1 لإدارة أكواد الخصم وحالتها وتاريخ الانتهاء مع جاهزية لربط قاعدة البيانات لاحقًا."
+        description="إدارة أكواد الخصم الفعلية المرتبطة بقاعدة البيانات والدفع."
         action={<Link href="/admin/coupons/new" className="rounded-2xl bg-[#0A2830] px-5 py-3 text-sm font-medium text-white hover:opacity-90">إضافة كوبون</Link>}
       />
-
-      <AdminCard className="mb-5 bg-[#FFF8E6]">
-        <p className="text-sm text-[#7A6555]">ملاحظة: بيانات الكوبونات الحالية مهيأة للواجهة الإدارية ومربوطة ببيانات seed داخل التطبيق لحين إضافة جدول coupons فعلي في Prisma.</p>
-      </AdminCard>
 
       <AdminCard className="overflow-hidden p-0">
         {loading ? (
           <div className="p-6 text-sm text-[#7A6555]">جاري تحميل الكوبونات...</div>
+        ) : coupons.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="mb-3 text-sm text-[#7A6555]">لا توجد كوبونات محفوظة بعد.</p>
+            <Link href="/admin/coupons/new" className="inline-flex rounded-xl bg-[#0A2830] px-4 py-2 text-sm font-medium text-white">
+              إنشاء أول كوبون
+            </Link>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -65,10 +68,10 @@ export default function CouponsPage() {
                 {coupons.map((coupon) => (
                   <tr key={coupon.id} className="border-b border-[#F1E7DC]">
                     <td className="px-5 py-4 font-semibold text-[#0A2830]">{coupon.code}</td>
-                    <td className="px-5 py-4 text-[#7A6555]">{coupon.description}</td>
+                    <td className="px-5 py-4 text-[#7A6555]">{coupon.description || "—"}</td>
                     <td className="px-5 py-4">{coupon.discountType === "PERCENTAGE" ? `${coupon.discountValue}%` : `${coupon.discountValue} ر.ع`}</td>
                     <td className="px-5 py-4">{coupon.appliesTo}</td>
-                    <td className="px-5 py-4">{coupon.usageCount}/{coupon.usageLimit}</td>
+                    <td className="px-5 py-4">{coupon.usageCount}/{coupon.usageLimit || "∞"}</td>
                     <td className="px-5 py-4 text-[#7A6555]">{formatDate(coupon.expiresAt)}</td>
                     <td className="px-5 py-4"><StatusBadge label={couponStatusLabels[coupon.status]} tone={coupon.status === "ACTIVE" ? "success" : coupon.status === "SCHEDULED" ? "info" : "neutral"} /></td>
                     <td className="px-5 py-4"><Link href={`/admin/coupons/${coupon.id}`} className="rounded-xl border border-[#D4AF37]/40 px-3 py-2 text-xs font-medium text-[#9E7E2C] hover:bg-[#FFF8E6]">تعديل</Link></td>

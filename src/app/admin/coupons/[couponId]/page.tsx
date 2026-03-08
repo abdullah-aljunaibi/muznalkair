@@ -56,11 +56,12 @@ export default function CouponDetailPage() {
           appliesTo: formData.get("appliesTo"),
         }),
       });
-      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "تعذر حفظ الكوبون");
       toast.success("تم حفظ إعدادات الكوبون");
       router.push("/admin/coupons");
-    } catch {
-      toast.error("تعذر حفظ الكوبون");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر حفظ الكوبون");
     } finally {
       setSaving(false);
     }
@@ -70,14 +71,14 @@ export default function CouponDetailPage() {
 
   return (
     <div>
-      <AdminPageHeader title={`تعديل الكوبون ${coupon.code}`} description="تحديث حالة الكوبون وحدوده وتجهيز الربط الخلفي لاحقًا." />
+      <AdminPageHeader title={`تعديل الكوبون ${coupon.code}`} description="تحديث حالة الكوبون وحدوده وربطه المباشر بالدفع." />
       <div className="grid gap-6 xl:grid-cols-[1fr,0.8fr]">
         <AdminCard>
           <form onSubmit={handleSubmit} className="grid gap-5">
             <div className="grid gap-5 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الكود</label>
-                <input name="code" defaultValue={coupon.code} required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+                <input name="code" defaultValue={coupon.code} required className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 uppercase outline-none" />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">الحالة</label>
@@ -103,7 +104,7 @@ export default function CouponDetailPage() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">قيمة الخصم</label>
-                <input name="discountValue" type="number" step="0.01" defaultValue={coupon.discountValue} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
+                <input name="discountValue" type="number" step="0.001" defaultValue={coupon.discountValue} className="w-full rounded-2xl border border-[#E7DDD2] px-4 py-3 outline-none" />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#6E5B4D]">حد الاستخدام</label>
@@ -128,10 +129,10 @@ export default function CouponDetailPage() {
           <h2 className="font-amiri text-2xl font-bold text-[#0A2830]">ملخص الاستخدام</h2>
           <div className="mt-4 space-y-3 text-sm text-[#6E5B4D]">
             <div><StatusBadge label={couponStatusLabels[coupon.status]} tone={coupon.status === "ACTIVE" ? "success" : coupon.status === "SCHEDULED" ? "info" : "neutral"} /></div>
-            <div>الاستخدام الحالي: <span className="font-semibold text-[#0A2830]">{coupon.usageCount} / {coupon.usageLimit}</span></div>
+            <div>الاستخدام الحالي: <span className="font-semibold text-[#0A2830]">{coupon.usageCount} / {coupon.usageLimit || "∞"}</span></div>
             <div>ينتهي في: <span className="font-semibold text-[#0A2830]">{formatDate(coupon.expiresAt)}</span></div>
             <div>ينطبق على: <span className="font-semibold text-[#0A2830]">{coupon.appliesTo}</span></div>
-            <div className="rounded-2xl bg-[#FFF8E6] p-4 text-xs text-[#7A6555]">TODO: عند إضافة جدول coupons في Prisma يمكن تحويل هذه الشاشة من mock API إلى CRUD كامل دون تغيير كبير في الواجهة.</div>
+            <div className="rounded-2xl bg-[#F6FBFC] p-4 text-xs text-[#4E6971]">هذا الكوبون أصبح مرتبطًا فعليًا بقاعدة البيانات ويمكن استخدامه مباشرة أثناء الدفع.</div>
           </div>
         </AdminCard>
       </div>
