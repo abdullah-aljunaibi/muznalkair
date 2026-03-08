@@ -57,52 +57,44 @@ const navItems = [
   },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+type SidebarProps = {
+  pathname: string;
+  closeMobile: () => void;
+};
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-6 border-b border-white/10">
-        <Link href="/admin" className="flex items-center gap-3">
+function SidebarPanel({ pathname, closeMobile }: SidebarProps) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="border-b border-white/10 p-6">
+        <Link href="/admin" className="flex items-center gap-3" onClick={closeMobile}>
           <MuznLogo size={36} />
           <div>
-            <span
-              className="text-white font-bold text-sm block"
-              style={{ fontFamily: "var(--font-amiri)" }}
-            >
+            <span className="block text-sm font-bold text-white" style={{ fontFamily: "var(--font-amiri)" }}>
               مقرأة مُزن الخير
             </span>
-            <span
-              className="text-xs block"
-              style={{ color: "#D4AF37", fontFamily: "var(--font-tajawal)" }}
-            >
+            <span className="block text-xs" style={{ color: "#D4AF37", fontFamily: "var(--font-tajawal)" }}>
               لوحة الإدارة
             </span>
           </div>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 flex flex-col gap-1">
+      <nav className="flex flex-1 flex-col gap-1 px-4 py-6">
         {navItems.map((item) => {
-          const isActive = item.exact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+          const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border-r-4"
+              className="flex items-center gap-3 rounded-xl border-r-4 px-4 py-3 transition-all duration-200"
               style={{
                 background: isActive ? "rgba(212,175,55,0.12)" : "transparent",
                 color: isActive ? "#D4AF37" : "rgba(255,255,255,0.75)",
                 borderRightColor: isActive ? "#D4AF37" : "transparent",
                 fontFamily: "var(--font-tajawal)",
               }}
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobile}
             >
               <span>{item.icon}</span>
               <span className="text-sm font-medium">{item.label}</span>
@@ -110,16 +102,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           );
         })}
 
-        {/* Divider */}
         <div className="my-2 border-t border-white/10" />
 
-        {/* Visit site */}
-        <a
+        <Link
           href="/"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/10 border-r-4 border-transparent"
+          className="flex items-center gap-3 rounded-xl border-r-4 border-transparent px-4 py-3 transition-all duration-200 hover:bg-white/10"
           style={{ color: "rgba(255,255,255,0.75)", fontFamily: "var(--font-tajawal)" }}
+          onClick={closeMobile}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
@@ -132,14 +123,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <polyline points="15 3 21 3 21 9" />
             <line x1="10" y1="14" x2="21" y2="3" />
           </svg>
-        </a>
+        </Link>
       </nav>
 
-      {/* Sign out */}
-      <div className="px-4 py-4 border-t border-white/10">
+      <div className="border-t border-white/10 px-4 py-4">
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-right transition-all duration-200 hover:bg-red-500/10 border-r-4 border-transparent"
+          className="flex w-full items-center gap-3 rounded-xl border-r-4 border-transparent px-4 py-3 text-right transition-all duration-200 hover:bg-red-500/10"
           style={{ color: "rgba(255,255,255,0.75)", fontFamily: "var(--font-tajawal)" }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -152,20 +142,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     </div>
   );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = () => setMobileOpen(false);
 
   return (
     <div className="flex min-h-screen" dir="rtl">
-      {/* Desktop sidebar — fixed right */}
       <aside
-        className="hidden md:flex flex-col w-64 min-h-screen flex-shrink-0 fixed right-0 top-0 z-30"
+        className="fixed right-0 top-0 z-30 hidden min-h-screen w-64 flex-shrink-0 flex-col md:flex"
         style={{ background: "#030D10" }}
       >
-        <SidebarContent />
+        <SidebarPanel pathname={pathname} closeMobile={closeMobile} />
       </aside>
 
-      {/* Mobile hamburger */}
       <button
-        className="md:hidden fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-lg shadow-lg"
+        className="fixed right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg shadow-lg md:hidden"
         style={{ background: "#030D10", color: "white" }}
         onClick={() => setMobileOpen(!mobileOpen)}
         aria-label="فتح القائمة"
@@ -186,31 +180,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </svg>
       </button>
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-40"
-          onClick={() => setMobileOpen(false)}
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={closeMobile} style={{ background: "rgba(0,0,0,0.6)" }}>
           <aside
-            className="absolute right-0 top-0 w-64 min-h-full flex flex-col"
+            className="absolute right-0 top-0 flex min-h-full w-64 flex-col"
             style={{ background: "#030D10" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <SidebarContent />
+            <SidebarPanel pathname={pathname} closeMobile={closeMobile} />
           </aside>
         </div>
-      )}
+      ) : null}
 
-      {/* Main content — offset for sidebar */}
-      <main
-        className="flex-1 md:mr-64 min-h-screen"
-        style={{ background: "#FAF4EE" }}
-      >
-        <div className="p-6 md:p-8">
-          {children}
-        </div>
+      <main className="min-h-screen flex-1 md:mr-64" style={{ background: "#FAF4EE" }}>
+        <div className="p-6 md:p-8">{children}</div>
       </main>
     </div>
   );

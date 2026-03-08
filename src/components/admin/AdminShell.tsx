@@ -16,18 +16,20 @@ const navItems = [
   { href: "/admin/uploads", label: "رفع المحتوى", icon: "⬆️" },
 ];
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+type SidebarProps = {
+  pathname: string;
+  closeMobile: () => void;
+};
 
-  const SidebarContent = () => (
+function SidebarPanel({ pathname, closeMobile }: SidebarProps) {
+  return (
     <div className="sticky top-0 flex h-full flex-col">
       <div className="border-b border-white/10 p-6">
         <Link
           href="/admin"
           className="flex items-center gap-3"
           aria-label="الانتقال إلى لوحة الإدارة الرئيسية"
-          onClick={() => setMobileOpen(false)}
+          onClick={closeMobile}
         >
           <MuznLogo size={38} ariaLabel="شعار مقرأة مزن الخير" />
           <div>
@@ -44,7 +46,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobile}
               aria-label={`الانتقال إلى ${item.label}`}
               className="flex min-h-11 items-center gap-3 rounded-2xl px-4 py-3 text-sm transition"
               style={{
@@ -65,7 +67,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           href="/"
           className="block min-h-11 rounded-xl px-4 py-3 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
           aria-label="العودة إلى الموقع العام"
-          onClick={() => setMobileOpen(false)}
+          onClick={closeMobile}
         >
           العودة للموقع العام
         </Link>
@@ -79,6 +81,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </div>
     </div>
   );
+}
+
+export default function AdminShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = () => setMobileOpen(false);
 
   return (
     <div className="min-h-screen bg-[#F7F0E8] text-[#1A0A00]" dir="rtl">
@@ -106,20 +114,20 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
       <div className="flex min-h-screen flex-col lg:flex-row-reverse">
         <aside className="hidden w-full border-b border-white/10 bg-[#051820] text-white lg:flex lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-l lg:border-white/10">
-          <SidebarContent />
+          <SidebarPanel pathname={pathname} closeMobile={closeMobile} />
         </aside>
 
         {mobileOpen ? (
           <div
             className="fixed inset-0 z-40 lg:hidden"
             style={{ background: "rgba(0,0,0,0.5)" }}
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobile}
           >
             <aside
               className="absolute right-0 top-0 h-full w-72 border-l border-white/10 bg-[#051820] text-white"
               onClick={(event) => event.stopPropagation()}
             >
-              <SidebarContent />
+              <SidebarPanel pathname={pathname} closeMobile={closeMobile} />
             </aside>
           </div>
         ) : null}

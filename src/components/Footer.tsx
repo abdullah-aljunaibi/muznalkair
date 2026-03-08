@@ -1,4 +1,3 @@
-import Link from "next/link";
 import MuznLogo from "./MuznLogo";
 
 export default function Footer() {

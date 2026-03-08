@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import MuznLogo from "./MuznLogo";
 
+const navLinks = [
+  { href: "/#about", label: "من نحن" },
+  { href: "/#programs", label: "البرامج" },
+  { href: "/#courses", label: "الدورات" },
+];
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -17,10 +23,9 @@ export default function Navbar() {
         borderBottom: "1px solid rgba(212,175,55,0.15)",
       }}
     >
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Left side: CTA buttons */}
-          <div className="hidden md:flex items-center gap-3">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="hidden items-center gap-3 md:flex">
             <Link
               href="/login"
               className="px-4 py-2 text-sm font-medium transition-all duration-200"
@@ -31,14 +36,6 @@ export default function Navbar() {
                 border: "1px solid rgba(74,56,40,0.25)",
                 borderRadius: "50px",
                 padding: "8px 20px",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = "#D4AF37";
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(212,175,55,0.5)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = "#4A3828";
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(74,56,40,0.25)";
               }}
             >
               تسجيل الدخول
@@ -55,27 +52,14 @@ export default function Navbar() {
                 padding: "10px 28px",
                 boxShadow: "0 2px 12px rgba(10,40,48,0.25)",
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 2px 20px rgba(212,175,55,0.3), 0 0 0 1px rgba(212,175,55,0.4)";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.03)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 2px 12px rgba(10,40,48,0.25)";
-                (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)";
-              }}
             >
               انضمي الآن ←
             </Link>
           </div>
 
-          {/* Center: Nav links */}
-          <div className="hidden md:flex items-center gap-8">
-            {[
-              { href: "/#about", label: "من نحن" },
-              { href: "/#programs", label: "البرامج" },
-              { href: "/#courses", label: "الدورات" },
-            ].map((link) => (
-              <a
+          <div className="hidden items-center gap-8 md:flex">
+            {navLinks.map((link) => (
+              <Link
                 key={link.href}
                 href={link.href}
                 className="text-sm font-medium transition-colors duration-200"
@@ -85,33 +69,19 @@ export default function Navbar() {
                   color: "#4A3828",
                   textDecoration: "none",
                 }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.color = "#D4AF37";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.color = "#4A3828";
-                }}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
-          {/* Mobile hamburger */}
           <button
-            className="md:hidden flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="القائمة"
             style={{ color: "#1A0A00" }}
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               {menuOpen ? (
                 <>
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -127,55 +97,35 @@ export default function Navbar() {
             </svg>
           </button>
 
-          {/* Right side: Logo + Name */}
           <Link href="/" className="flex items-center gap-3" aria-label="العودة إلى الصفحة الرئيسية">
             <MuznLogo size={40} ariaLabel="شعار مقرأة مزن الخير" />
-            <span
-              className="hidden text-lg font-bold sm:block"
-              style={{ fontFamily: "var(--font-amiri)", color: "#1A0A00" }}
-            >
+            <span className="hidden text-lg font-bold sm:block" style={{ fontFamily: "var(--font-amiri)", color: "#1A0A00" }}>
               مقرأة مُزن الخير
             </span>
           </Link>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {menuOpen && (
+      {menuOpen ? (
         <div
-          className="md:hidden px-4 py-4 flex flex-col gap-3"
+          className="flex flex-col gap-3 px-4 py-4 md:hidden"
           style={{
             background: "rgba(250, 244, 238, 0.97)",
             borderTop: "1px solid rgba(212,175,55,0.15)",
           }}
         >
-          <a
-            href="/#about"
-            className="min-h-11 py-2 text-right text-sm"
-            aria-label="الانتقال إلى قسم من نحن"
-            style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            من نحن
-          </a>
-          <a
-            href="/#programs"
-            className="min-h-11 py-2 text-right text-sm"
-            aria-label="الانتقال إلى قسم البرامج"
-            style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            البرامج
-          </a>
-          <a
-            href="/#courses"
-            className="min-h-11 py-2 text-right text-sm"
-            aria-label="الانتقال إلى قسم الدورات"
-            style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            الدورات
-          </a>
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="min-h-11 py-2 text-right text-sm"
+              aria-label={`الانتقال إلى قسم ${link.label}`}
+              style={{ fontFamily: "var(--font-tajawal)", color: "#4A3828", textDecoration: "none" }}
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
           <Link
             href="/login"
             className="min-h-11 px-4 py-2 text-center text-sm font-medium"
@@ -205,7 +155,7 @@ export default function Navbar() {
             انضمي الآن ←
           </Link>
         </div>
-      )}
+      ) : null}
     </nav>
   );
 }
