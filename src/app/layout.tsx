@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Providers from "@/components/Providers";
+import PageTransition from "@/components/PageTransition";
 import { fullOgImageUrl, siteConfig } from "@/lib/seo";
 import "./globals.css";
 
@@ -73,7 +74,9 @@ export default function RootLayout({
           الانتقال إلى المحتوى الرئيسي
         </a>
         <Providers>
-          <div id="app-main">{children}</div>
+          <div id="app-main">
+            <PageTransition>{children}</PageTransition>
+          </div>
           <Toaster
             position="top-center"
             dir="rtl"
