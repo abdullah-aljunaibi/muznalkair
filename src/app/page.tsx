@@ -11,84 +11,81 @@ import { siteConfig } from "@/lib/seo";
 const heroSlides = [
   {
     image: "/premium/hero-1.jpg",
-    eyebrow: "وجهات ملهمة",
-    title: "اكتشفي رحلة قرآنية بهوية بصرية أكثر فخامة",
+    eyebrow: "مقرأة مُزن الخير",
+    title: "رحلتكِ القرآنية تبدأ من هنا",
     description:
-      "تجربة رقمية غامرة تجمع بين السكينة، التنظيم، وسهولة الانطلاق في مسارات التلاوة والحفظ.",
+      "أول مقرأة إلكترونية عُمانية نسائية لتعليم القرآن الكريم — حلقات تصحيح التلاوة، التجويد، الحفظ، والتدبر عن بُعد.",
   },
   {
     image: "/premium/hero-2.jpg",
-    eyebrow: "تجربة هادئة",
-    title: "مساحات تعليمية تنبض بالضوء والتدرجات والرقي",
+    eyebrow: "المقرأة العامة",
+    title: "حلقات يومية متعددة المستويات",
     description:
-      "من الصفحة الأولى حتى التسجيل، كل تفصيل يعكس جودة أعلى وحركة سلسة مستوحاة من مواقع السياحة الفاخرة.",
+      "من تصحيح التلاوة إلى دروس التجويد والفقه والمنظومات — برامج متكاملة تناسب جميع المستويات.",
   },
   {
     image: "/premium/hero-3.jpg",
-    eyebrow: "حضور بصري",
-    title: "محتوى واضح فوق صور كاملة الارتفاع وانتقالات ناعمة",
+    eyebrow: "برنامج الأترجة",
+    title: "مسارات حفظ منظمة بمتابعة مستمرة",
     description:
-      "بطاقات متحركة، أقسام تكشف نفسها أثناء التمرير، وشريط فئات قابل للسحب على الجوال.",
+      "ثلاثة مسارات مرنة للحفظ: الإذخر، السنا، وقنوان — مع أكثر من ١٧٠٠ حافظة مسجلة.",
   },
   {
     image: "/premium/hero-4.jpg",
-    eyebrow: "تنقل ذكي",
-    title: "شريط علوي شفاف يتحول تدريجيًا مع التمرير",
+    eyebrow: "مقرأة الأمهات",
+    title: "برامج مخصصة للأمهات",
     description:
-      "تنقل ثابت، شريط سفلي للجوال، وتجربة أكثر انسيابًا بين المقاطع والصفحات.",
+      "القاعدة النورانية، تلقين الأجزاء، ودروس التدبر — مساحة تعليمية هادئة مصممة للأمهات.",
   },
 ];
 
-const categories = [
-  "المقرأة العامة",
-  "مقرأة الأمهات",
-  "برنامج الأترجة",
-  "حلقات الصباح",
-  "الدورات المكثفة",
-  "التهيئة للإجازة",
-];
-
-const destinations = [
+const programs = [
   {
     title: "المقرأة العامة",
-    description: "جلسات يومية متدرجة المستويات مع تركيز على جودة التلاوة وسلاسة الانضمام.",
+    description: "حلقات تصحيح التلاوة، دروس تجويد متنوعة، أحكام الفقه، المنظومات، كتاب المنير، حلقات لغير الناطقات بالعربية، وحلقات الأطفال.",
     image: "/premium/hero-2.jpg",
-    stats: "جلسات ممتدة من الفجر حتى المساء",
+    stats: "٧ برامج • ١٥,٠٠٠ طالبة",
+    price: "٥ ر.ع / شهريًا",
   },
   {
-    title: "برنامج الأترجة",
-    description: "مسارات حفظ منظمة بتجربة متابعة أوضح، بطاقات معلومات أهدأ، وتدرج بصري أرقى.",
+    title: "مقرأة الأمهات",
+    description: "تصحيح التلاوة، القاعدة النورانية، تلقين جزئي عم وتبارك، دروس التجويد والتدبر — برامج مصممة خصيصًا للأمهات.",
     image: "/premium/hero-3.jpg",
-    stats: "ثلاثة مسارات حفظ مرنة",
+    stats: "٥ برامج • ١,١٠٠ طالبة",
+    price: "٥ ر.ع / شهريًا",
   },
   {
-    title: "الدورات المتخصصة",
-    description: "رحلة تعليمية تبدو أكثر premium مع صور واسعة، طبقات شفافة، وتفاصيل تبرز القيمة.",
+    title: "مقرأة الحفظ",
+    description: "برنامج الأترجة بثلاثة مسارات (الإذخر، السنا، قنوان)، البرامج الرمضانية، وبرنامج السرد القرآني رواء الآي.",
     image: "/premium/hero-5.jpg",
-    stats: "محتوى منظم ونقاط قرار أوضح",
+    stats: "٣ برامج • ١,٧٠٠ حافظة",
+    price: "٨ ر.ع / شهريًا",
   },
 ];
 
-const experienceSteps = [
+const scheduleItems = [
   {
-    title: "اختاري المسار",
-    text: "الشريط الأفقي للفئات يعطي بداية أسرع على الجوال مع نقاط snap دقيقة وسهلة.",
+    title: "حلقات الفجر",
+    text: "جلسات صباحية بعد صلاة الفجر مباشرة — بداية يوم مباركة مع كتاب الله.",
+    time: "٥:٠٠ - ٦:٣٠ صباحًا",
   },
   {
-    title: "استكشفي التفاصيل",
-    text: "البطاقات تستخدم رفعًا بصريًا خفيفًا وتكبيرًا للصورة لإبراز المحتوى دون مبالغة.",
+    title: "حلقات الضحى",
+    text: "فترة الضحى المخصصة للأمهات والمنتسبات الجدد مع معلمات متخصصات.",
+    time: "٩:٠٠ - ١١:٠٠ صباحًا",
   },
   {
-    title: "ابدئي التسجيل",
-    text: "الانتقالات الهادئة والهيكل الأوضح يوجهان الطالبة من الإلهام إلى الإجراء مباشرة.",
+    title: "حلقات المساء",
+    text: "جلسات مسائية مكثفة للحفظ والمراجعة مع متابعة أسبوعية دقيقة.",
+    time: "٨:٠٠ - ١٠:٠٠ مساءً",
   },
 ];
 
 const metrics = [
-  { value: "٣ آلاف+", label: "طالبة" },
-  { value: "٥", label: "ختمات مكتملة" },
-  { value: "٢٠+", label: "معلمة متطوعة" },
-  { value: "١٠٠٪", label: "روح تطوعية" },
+  { value: "١٥,٠٠٠+", label: "طالبة في المجتمع" },
+  { value: "١,٧٠٠+", label: "حافظة في برنامج الأترجة" },
+  { value: "١٠٣+", label: "معلمة" },
+  { value: "١٤٠+", label: "مشرفة" },
 ];
 
 function useHeroRotation(totalSlides: number) {
@@ -148,9 +145,8 @@ export default function HomePage() {
       url: siteConfig.url,
       logo: `${siteConfig.url}/og-image.jpg`,
       sameAs: [
-        "https://instagram.com/mozn_alkair",
-        "https://youtube.com/@mozn_alkair",
-        "https://wa.me/96897021040",
+        siteConfig.instagram,
+        `https://wa.me/${siteConfig.whatsapp.replace("+", "")}`,
       ],
       description: siteConfig.description,
     }),
@@ -190,6 +186,7 @@ export default function HomePage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
 
+        {/* ── Hero ── */}
         <section
           id="hero"
           ref={heroRef}
@@ -231,17 +228,17 @@ export default function HomePage() {
                 <Link href="/register" className="premium-cta premium-cta-primary">
                   انضمي الآن
                 </Link>
-                <a href="#destinations" className="premium-cta premium-cta-secondary">
-                  استكشفي التجربة
+                <a href="#programs" className="premium-cta premium-cta-secondary">
+                  استكشفي البرامج
                 </a>
               </div>
             </div>
 
             <div className="self-end lg:justify-self-end">
               <div className="glass-panel max-w-md p-6 text-white/88 backdrop-blur-xl">
-                <p className="text-sm uppercase tracking-[0.35em] text-[--color-gold-soft]">Premium Journey</p>
+                <p className="text-sm uppercase tracking-[0.35em] text-[--color-gold-soft]">تأسيس {siteConfig.founder}</p>
                 <p className="mt-4 font-amiri text-3xl leading-relaxed text-white">
-                  تصميم أهدأ، صور أوسع، طبقات ذهبية ورملية، وتجربة أقرب إلى صفحات الوجهات الراقية.
+                  مقرأة إلكترونية تطوعية تخدم أكثر من ١٥ ألف امرأة في تعلم وحفظ القرآن الكريم.
                 </p>
                 <div className="mt-6 grid grid-cols-2 gap-4 text-right">
                   {metrics.map((item) => (
@@ -278,7 +275,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="premium-band">
+        {/* ── Stats Band ── */}
+        <section id="stats" className="premium-band">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-4 lg:px-8">
             {metrics.map((metric) => (
               <div key={metric.label} className="rounded-[28px] border border-white/10 bg-white/6 px-6 py-5 text-center text-white backdrop-blur-sm">
@@ -289,41 +287,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="categories" className="section-padding" data-reveal>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 flex items-end justify-between gap-6">
-              <div>
-                <span className="section-kicker">الفئات</span>
-                <h2 className="section-title">شريط فئات مرن ومهيأ بالكامل للجوال</h2>
-              </div>
-              <p className="hidden max-w-xl text-base leading-7 text-[--color-text-soft] md:block">
-                تم تحويل الفئات إلى شريط أفقي قابل للتمرير مع snap points، ليبدو كمسار استكشاف سريع بدل شبكة تقليدية مزدحمة.
-              </p>
-            </div>
-
-            <div className="snap-strip">
-              {categories.map((category, index) => (
-                <button key={category} type="button" className="snap-chip">
-                  <span className="font-amiri text-3xl text-[--color-gold]">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="text-base text-[--color-text-dark]">{category}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="destinations" className="section-padding pt-0" data-reveal>
+        {/* ── Programs ── */}
+        <section id="programs" className="section-padding" data-reveal>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 max-w-3xl">
-              <span className="section-kicker">الوجهات</span>
-              <h2 className="section-title">بطاقات أهدأ مع حركة تكبير للصورة ورفع بصري خفيف</h2>
+              <span className="section-kicker">برامجنا</span>
+              <h2 className="section-title">ثلاث مقارئ تخدم جميع الاحتياجات</h2>
               <p className="mt-4 text-lg leading-8 text-[--color-text-soft]">
-                إعادة البناء تركز على premium feel: صور طويلة، زجاجيات مدروسة، وتفاعل hover محسوب يحافظ على الرصانة.
+                اختاري المسار الأنسب لكِ — من تصحيح التلاوة الأساسي إلى مسارات الحفظ المتقدمة.
               </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
-              {destinations.map((item) => (
+              {programs.map((item) => (
                 <article key={item.title} className="destination-card">
                   <div className="destination-card-media">
                     <Image src={item.image} alt={item.title} fill sizes="(max-width: 1024px) 100vw, 33vw" className="object-cover" />
@@ -333,9 +309,12 @@ export default function HomePage() {
                     <span className="text-sm tracking-[0.3em] text-[--color-gold]">{item.stats}</span>
                     <h3 className="mt-4 font-amiri text-3xl text-white">{item.title}</h3>
                     <p className="mt-3 text-base leading-7 text-white/80">{item.description}</p>
-                    <a href="#experience" className="mt-6 inline-flex text-sm font-medium text-[--color-gold-soft]">
-                      متابعة التفاصيل
-                    </a>
+                    <div className="mt-5 flex items-center justify-between">
+                      <span className="font-amiri text-2xl text-[--color-gold]">{item.price}</span>
+                      <Link href="/register" className="text-sm font-medium text-[--color-gold-soft] hover:underline">
+                        سجلي الآن ←
+                      </Link>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -343,18 +322,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="experience" className="section-padding" data-reveal>
+        {/* ── Schedule ── */}
+        <section id="join" className="section-padding" data-reveal>
           <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
             <div className="rounded-[36px] border border-[rgba(10,40,48,0.08)] bg-white/70 p-8 shadow-[0_30px_80px_rgba(10,40,48,0.08)] backdrop-blur-xl">
-              <span className="section-kicker">التجربة</span>
-              <h2 className="section-title">حركة دخول متدرجة عبر IntersectionObserver فقط</h2>
+              <span className="section-kicker">أوقات الحلقات</span>
+              <h2 className="section-title">جدول مرن يناسب يومكِ</h2>
               <p className="mt-4 text-lg leading-8 text-[--color-text-soft]">
-                لا توجد مكتبات حركة ثقيلة هنا. كل قسم يكشف نفسه بصعود خفيف وشفافية محسوبة للحفاظ على الأداء.
+                حلقات على مدار اليوم — اختاري الوقت المناسب لكِ وابدئي رحلتكِ مع كتاب الله.
               </p>
               <div className="mt-8 space-y-4">
-                {experienceSteps.map((step, index) => (
+                {scheduleItems.map((step, index) => (
                   <div key={step.title} className="rounded-[28px] bg-[linear-gradient(180deg,rgba(250,244,238,0.9),rgba(255,255,255,0.98))] p-5">
-                    <div className="text-sm tracking-[0.28em] text-[--color-gold]">0{index + 1}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm tracking-[0.28em] text-[--color-gold]">0{index + 1}</div>
+                      <div className="text-sm font-medium text-[--color-text-soft]" dir="ltr">{step.time}</div>
+                    </div>
                     <h3 className="mt-2 font-amiri text-2xl text-[--color-text-dark]">{step.title}</h3>
                     <p className="mt-2 text-base leading-7 text-[--color-text-soft]">{step.text}</p>
                   </div>
@@ -364,22 +347,43 @@ export default function HomePage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="glass-tile relative min-h-[280px] overflow-hidden rounded-[36px] p-7 text-white sm:col-span-2">
-                <Image src="/premium/hero-4.jpg" alt="مشهد بصري واسع" fill sizes="100vw" className="object-cover" />
+                <Image src="/premium/hero-4.jpg" alt="رحلة قرآنية" fill sizes="100vw" className="object-cover" />
                 <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(4,24,30,0.3),rgba(4,24,30,0.82))]" />
                 <div className="relative z-10 max-w-xl">
-                  <span className="premium-pill">Hero Parallax</span>
+                  <span className="premium-pill">انضمي إلينا</span>
                   <p className="mt-5 font-amiri text-4xl leading-tight">
-                    صور كاملة الارتفاع مع طبقات gradient وتبديل crossfade سريع وناعم.
+                    أكثر من ١٥ ألف طالبة اخترن مقرأة مُزن الخير. ابدئي رحلتكِ اليوم.
                   </p>
+                  <div className="mt-6">
+                    <Link href="/register" className="premium-cta premium-cta-primary">
+                      سجلي حسابكِ الآن
+                    </Link>
+                  </div>
                 </div>
               </div>
               <div className="glass-tile rounded-[32px] p-7">
-                <div className="text-sm tracking-[0.28em] text-[--color-gold]">Sticky Nav</div>
-                <p className="mt-4 font-amiri text-3xl text-[--color-text-dark]">ينتقل من شفاف إلى صلب عند التمرير</p>
+                <div className="text-sm tracking-[0.28em] text-[--color-gold]">واتساب</div>
+                <p className="mt-4 font-amiri text-3xl text-[--color-text-dark]">تواصلي معنا مباشرة</p>
+                <a
+                  href={`https://wa.me/${siteConfig.whatsapp.replace("+", "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 text-base font-medium text-[--color-gold] hover:underline"
+                >
+                  {siteConfig.whatsappDisplay} ←
+                </a>
               </div>
               <div className="glass-tile rounded-[32px] p-7">
-                <div className="text-sm tracking-[0.28em] text-[--color-gold]">Route Motion</div>
-                <p className="mt-4 font-amiri text-3xl text-[--color-text-dark]">انتقال صفحة خفيف قائم على CSS عند تغيير المسار</p>
+                <div className="text-sm tracking-[0.28em] text-[--color-gold]">انستقرام</div>
+                <p className="mt-4 font-amiri text-3xl text-[--color-text-dark]">تابعينا للمستجدات</p>
+                <a
+                  href={siteConfig.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 text-base font-medium text-[--color-gold] hover:underline"
+                >
+                  {siteConfig.instagramHandle} ←
+                </a>
               </div>
             </div>
           </div>

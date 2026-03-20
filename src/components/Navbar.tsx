@@ -6,9 +6,9 @@ import MuznLogo from "./MuznLogo";
 
 const navLinks = [
   { href: "#hero", label: "الرئيسية" },
-  { href: "#categories", label: "الفئات" },
-  { href: "#destinations", label: "الوجهات" },
-  { href: "#experience", label: "التجربة" },
+  { href: "#programs", label: "البرامج" },
+  { href: "#stats", label: "الإنجازات" },
+  { href: "#join", label: "الانضمام" },
 ];
 
 export default function Navbar() {
@@ -33,7 +33,7 @@ export default function Navbar() {
               <MuznLogo size={42} ariaLabel="شعار مقرأة مزن الخير" />
               <div className="hidden sm:block">
                 <div className="font-amiri text-2xl font-bold text-white">مقرأة مُزن الخير</div>
-                <div className="text-xs tracking-[0.28em] text-white/60">PREMIUM EXPERIENCE</div>
+                <div className="text-xs tracking-[0.2em] text-white/60">لتعليم القرآن الكريم</div>
               </div>
             </Link>
           </div>
