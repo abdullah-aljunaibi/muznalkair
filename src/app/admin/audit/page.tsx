@@ -19,7 +19,7 @@ export default async function AdminAuditPage() {
     <div>
       <AdminPageHeader
         title="سجل التدقيق"
-        description="سجل آخر الإجراءات الحساسة: تغييرات المدفوعات ومعالجة Webhook Stripe."
+        description="سجل آخر الإجراءات الحساسة: تغييرات المدفوعات ومعالجة Webhook الدفع."
       />
 
       <AdminCard className="overflow-hidden p-0">

@@ -47,12 +47,12 @@ model Purchase {
   id              String         @id @default(cuid())
   userId          String
   courseId        String
-  couponId        String?
-  stripeSessionId String?        @unique
-  amount          Float
-  discountAmount  Float          @default(0)
-  status          PurchaseStatus @default(PENDING)
-  paymentMethod   PaymentMethod  @default(STRIPE)
+  couponId         String?
+  paymentSessionId String?        @unique
+  amount           Float
+  discountAmount   Float          @default(0)
+  status           PurchaseStatus @default(PENDING)
+  paymentMethod    PaymentMethod  @default(THAWANI)
   createdAt       DateTime       @default(now())
   user            User           @relation(fields: [userId], references: [id])
   course          Course         @relation(fields: [courseId], references: [id])
@@ -67,6 +67,7 @@ enum PurchaseStatus {
 }
 
 enum PaymentMethod {
+  THAWANI
   STRIPE
   WHATSAPP_BANK_TRANSFER
 }

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       discountAmount: order.discountAmount,
       status: order.status,
       paymentMethod: order.paymentMethod,
-      stripeSessionId: order.stripeSessionId,
+      paymentSessionId: order.paymentSessionId,
       createdAt: order.createdAt,
       student: order.user,
       course: order.course,

@@ -104,17 +104,25 @@
 
 ---
 
-## Missing Information (not in PDF)
+## Resolved Information
+- [x] **Pricing** → All programs are FREE (volunteer/تطوعي)
+- [x] **Contact** → WhatsApp/Phone: +968 9702 1040
+- [x] **Social media** → Instagram: @mozn_alkair (https://www.instagram.com/mozn_alkair/)
+- [x] **Branding** → Logo saved at `public/logo-muzn.jpg` (640×640 JPEG). Colors: Teal #1A6B9A, Gold #C9A227, White #FFFFFF, Dark #2C2C2C
 
-The following information was NOT found in the PDF and may need to be provided by Abdullah or the academy:
+## Future TODOs
 
-- [ ] **Pricing** for any courses/programs
-- [ ] **Contact information** (phone, email, WhatsApp)
-- [ ] **Social media links** (Instagram, Twitter, etc.)
-- [ ] **About the founder** (bio, qualifications)
-- [ ] **Course schedule** / timing details
-- [ ] **Registration process** details
+- [ ] **Zoom link** — Get the academy's Zoom link (5000+ capacity) and wire into schedule modal + join CTA (one-line change in `src/app/page.tsx` → `ZOOM_LINK` constant)
+- [ ] **Real schedule times** — Replace placeholder days/times in the schedule modal with actual program schedules from the academy
+- [ ] **About the founder** — Bio/qualifications for Ustadha Amena Al-Junaibiya
+- [ ] **Registration process** details — How do students actually sign up for circles?
 - [ ] **Testimonials** or student reviews
-- [ ] **Branding assets** (logo files, brand colors hex codes)
-- [ ] **Payment methods** accepted
 - [ ] **Certificate** information (if any)
+- [ ] **Replace MuznLogo SVG** — Wire the real logo image (`public/logo-muzn.jpg`) into the MuznLogo component (currently uses a placeholder SVG)
+- [ ] **Replace hero stock photos** — Get academy-specific images for the hero slides
+- [ ] **DKIM domain verification** — Complete Resend email domain verification
+- [ ] **Video hosting solution** — Currently placeholder/iframe
+- [ ] **Phase 5 — Auth/security review** — Admin route protection audit, CSRF/mutation safety, password reset abuse checks, brute-force tightening
+- [ ] **Richer automated tests** beyond smoke
+- [ ] **Conversion tracking / lead capture**
+- [ ] **Landing page optimization**

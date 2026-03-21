@@ -15,7 +15,7 @@ interface OrderDetail {
   discountAmount: number;
   status: keyof typeof orderStatusLabels;
   paymentMethod: keyof typeof paymentMethodLabels;
-  stripeSessionId?: string | null;
+  paymentSessionId?: string | null;
   createdAt: string;
   coupon?: {
     id: string;
@@ -138,7 +138,7 @@ export default function OrderDetailPage() {
                 {saving ? "جاري الحفظ..." : "حفظ الحالة"}
               </button>
             </div>
-            <p className="mt-3 text-xs text-[#9A8675]">هذه الميزة مخصصة للتسويات اليدوية أو مراجعة التحويلات البنكية خارج Stripe.</p>
+            <p className="mt-3 text-xs text-[#9A8675]">هذه الميزة مخصصة للتسويات اليدوية أو مراجعة التحويلات البنكية خارج بوابة الدفع.</p>
           </div>
         </AdminCard>
 

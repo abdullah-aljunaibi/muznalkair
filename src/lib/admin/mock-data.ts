@@ -1,5 +1,5 @@
 export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
-export type PaymentMethodType = "STRIPE" | "WHATSAPP_BANK_TRANSFER";
+export type PaymentMethodType = "THAWANI" | "STRIPE" | "WHATSAPP_BANK_TRANSFER";
 export type CourseVisibility = "PUBLISHED" | "DRAFT" | "ARCHIVED";
 export type StudentAccessStatus = "ACTIVE" | "PENDING_PAYMENT" | "SUSPENDED";
 export type CouponStatus = "ACTIVE" | "SCHEDULED" | "EXPIRED" | "DISABLED";
@@ -156,6 +156,7 @@ export const orderStatusLabels: Record<PaymentStatus, string> = {
 
 export const paymentMethodLabels: Record<PaymentMethodType, string> = {
   STRIPE: "Stripe",
+  THAWANI: "Thawani",
   WHATSAPP_BANK_TRANSFER: "تحويل بنكي / واتساب",
 };
 

@@ -13,7 +13,7 @@ interface Order {
   discountAmount: number;
   status: keyof typeof orderStatusLabels;
   paymentMethod: keyof typeof paymentMethodLabels;
-  stripeSessionId?: string | null;
+  paymentSessionId?: string | null;
   createdAt: string;
   student: { id: string; name: string; email: string };
   course: { id: string; title: string };

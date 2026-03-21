@@ -2,16 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateDiscount, canUseCoupon, normalizeCouponCode } from "@/lib/coupons";
-import Stripe from "stripe";
-
-const getStripe = () =>
-  process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+import { createCheckoutSession, getCheckoutUrl, isThawaniConfigured } from "@/lib/thawani";
 
 export async function POST(request: NextRequest) {
   try {
-    const stripe = getStripe();
-    if (!stripe) {
-      console.warn("Checkout requested but STRIPE_SECRET_KEY is missing.");
+    if (!isThawaniConfigured()) {
+      console.warn("Checkout requested but Thawani is not configured.");
       return NextResponse.json({ error: "خدمة الدفع غير مهيأة حاليًا" }, { status: 503 });
     }
 
@@ -68,26 +64,22 @@ export async function POST(request: NextRequest) {
     }
 
     const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    const clientReferenceId = `muzn_${session.user.id}_${courseId}_${Date.now()}`;
 
-    const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+    const thawaniSession = await createCheckoutSession({
+      client_reference_id: clientReferenceId,
       mode: "payment",
-      locale: "auto" as Stripe.Checkout.SessionCreateParams.Locale,
-      line_items: [
+      products: [
         {
-          price_data: {
-            currency: "omr",
-            product_data: {
-              name: course.title,
-              description: couponCode
-                ? `${course.description}\nكود الخصم المطبق: ${couponCode}`
-                : course.description,
-            },
-            unit_amount: Math.round(finalAmount * 1000),
-          },
+          name: couponCode
+            ? `${course.title} (خصم: ${couponCode})`
+            : course.title,
+          unit_amount: Math.round(finalAmount * 1000), // OMR → baisa
           quantity: 1,
         },
       ],
+      success_url: `${baseUrl}/dashboard?payment=success`,
+      cancel_url: `${baseUrl}/checkout`,
       metadata: {
         courseId: course.id,
         userId: session.user.id,
@@ -95,13 +87,14 @@ export async function POST(request: NextRequest) {
         couponCode,
         discountAmount: discountAmount.toString(),
         originalAmount: course.price.toString(),
+        clientReferenceId,
       },
-      success_url: `${baseUrl}/dashboard?payment=success`,
-      cancel_url: `${baseUrl}/checkout`,
     });
 
+    const checkoutUrl = getCheckoutUrl(thawaniSession.session_id);
+
     return NextResponse.json({
-      url: checkoutSession.url,
+      url: checkoutUrl,
       pricing: { originalAmount: course.price, discountAmount, finalAmount },
     });
   } catch (error) {
