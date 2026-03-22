@@ -1,8 +1,6 @@
 "use client";
 
-import type { TouchEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { siteConfig } from "@/lib/seo";
@@ -10,30 +8,34 @@ import { siteConfig } from "@/lib/seo";
 /* ── Zoom link placeholder — replace with real link when available ── */
 const ZOOM_LINK = "#"; // TODO: Replace with actual Zoom link
 
+/* ── Gradient backgrounds for hero slides ── */
+const heroGradients = [
+  "linear-gradient(135deg, #0a2830 0%, #1b6b7a 50%, #0a2830 100%)",
+  "linear-gradient(135deg, #0a2830 0%, #14505c 40%, #1b6b7a 100%)",
+  "linear-gradient(135deg, #1b6b7a 0%, #0a2830 60%, #14505c 100%)",
+  "linear-gradient(135deg, #14505c 0%, #1b6b7a 50%, #0a2830 100%)",
+];
+
 const heroSlides = [
   {
-    image: "/premium/hero-1.jpg",
     eyebrow: "مقرأة مُزن الخير",
     title: "رحلتكِ القرآنية تبدأ من هنا",
     description:
       "أول مقرأة إلكترونية عُمانية نسائية لتعليم القرآن الكريم — حلقات تصحيح التلاوة، التجويد، الحفظ، والتدبر عن بُعد.",
   },
   {
-    image: "/premium/hero-2.jpg",
     eyebrow: "المقرأة العامة",
     title: "حلقات يومية متعددة المستويات",
     description:
       "من تصحيح التلاوة إلى دروس التجويد والفقه والمنظومات — برامج متكاملة تناسب جميع المستويات.",
   },
   {
-    image: "/premium/hero-3.jpg",
     eyebrow: "برنامج الأترجة",
     title: "مسارات حفظ منظمة بمتابعة مستمرة",
     description:
       "ثلاثة مسارات مرنة للحفظ: الإذخر، السنا، وقنوان — مع أكثر من ١٧٠٠ حافظة مسجلة.",
   },
   {
-    image: "/premium/hero-4.jpg",
     eyebrow: "مقرأة الأمهات",
     title: "برامج مخصصة للأمهات",
     description:
@@ -51,7 +53,8 @@ interface Program {
   id: string;
   title: string;
   description: string;
-  image: string;
+  accent: string;
+  icon: string;
   stats: string;
   schedule: ProgramScheduleItem[];
 }
@@ -61,7 +64,8 @@ const programs: Program[] = [
     id: "general",
     title: "المقرأة العامة",
     description: "حلقات تصحيح التلاوة، دروس تجويد متنوعة، أحكام الفقه، المنظومات، كتاب المنير، حلقات لغير الناطقات بالعربية، وحلقات الأطفال.",
-    image: "/premium/hero-2.jpg",
+    accent: "from-[#1b6b7a] to-[#0a2830]",
+    icon: "📖",
     stats: "٧ برامج • ١٥,٠٠٠ طالبة",
     schedule: [
       { name: "حلقة تصحيح التلاوة", time: "٥:٠٠ - ٦:٣٠ صباحًا", days: "السبت — الخميس" },
@@ -73,7 +77,8 @@ const programs: Program[] = [
     id: "mothers",
     title: "مقرأة الأمهات",
     description: "تصحيح التلاوة، القاعدة النورانية، تلقين جزئي عم وتبارك، دروس التجويد والتدبر — برامج مصممة خصيصًا للأمهات.",
-    image: "/premium/hero-3.jpg",
+    accent: "from-[#d4af37] to-[#8b7520]",
+    icon: "🤲",
     stats: "٥ برامج • ١,١٠٠ طالبة",
     schedule: [
       { name: "تصحيح التلاوة", time: "٩:٠٠ - ١٠:٣٠ صباحًا", days: "السبت — الخميس" },
@@ -85,7 +90,8 @@ const programs: Program[] = [
     id: "memorization",
     title: "مقرأة الحفظ",
     description: "برنامج الأترجة بثلاثة مسارات (الإذخر، السنا، قنوان)، البرامج الرمضانية، وبرنامج السرد القرآني رواء الآي.",
-    image: "/premium/hero-5.jpg",
+    accent: "from-[#0a2830] to-[#1b6b7a]",
+    icon: "🌟",
     stats: "٣ برامج • ١,٧٠٠ حافظة",
     schedule: [
       { name: "مسار الإذخر", time: "٥:٣٠ - ٧:٠٠ صباحًا", days: "السبت — الخميس" },
@@ -155,17 +161,14 @@ function ScheduleModal({
         className="relative w-full max-w-lg animate-[modalIn_0.25s_ease-out] overflow-hidden rounded-[32px] border border-white/10 bg-[--color-surface] shadow-2xl"
         dir="rtl"
       >
-        {/* Header with image */}
-        <div className="relative h-40 overflow-hidden">
-          <Image
-            src={program.image}
-            alt={program.title}
-            fill
-            sizes="500px"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(4,24,30,0.92)] to-[rgba(4,24,30,0.3)]" />
-          <div className="absolute inset-x-0 bottom-0 p-6">
+        {/* Header with gradient */}
+        <div className={`relative overflow-hidden bg-gradient-to-br ${program.accent} p-6 pb-8`}>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20" />
+            <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
+          </div>
+          <div className="relative z-10">
+            <div className="mb-3 text-5xl">{program.icon}</div>
             <div className="mb-2 inline-flex rounded-full bg-[#25D366]/20 px-3 py-1 text-xs font-bold text-[#25D366]">
               مجاني — تطوعي
             </div>
@@ -235,21 +238,7 @@ function ScheduleModal({
 
 export default function HomePage() {
   const [activeSlide, setActiveSlide] = useHeroRotation(heroSlides.length);
-  const [scrollY, setScrollY] = useState(0);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
-  const heroRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -275,7 +264,7 @@ export default function HomePage() {
       "@type": "Organization",
       name: siteConfig.name,
       url: siteConfig.url,
-      logo: `${siteConfig.url}/og-image.jpg`,
+      logo: `${siteConfig.url}/logo-muzn.jpg`,
       sameAs: [
         siteConfig.instagram,
         `https://wa.me/${siteConfig.whatsapp.replace("+", "")}`,
@@ -289,29 +278,9 @@ export default function HomePage() {
     setActiveSlide((current) => (current + direction + heroSlides.length) % heroSlides.length);
   };
 
-  const handleTouchStart = (event: TouchEvent<HTMLElement>) => {
-    setTouchStartX(event.touches[0]?.clientX ?? null);
-  };
-
-  const handleTouchEnd = (event: TouchEvent<HTMLElement>) => {
-    if (touchStartX === null) {
-      return;
-    }
-
-    const deltaX = (event.changedTouches[0]?.clientX ?? 0) - touchStartX;
-
-    if (Math.abs(deltaX) > 48) {
-      goToSlide(deltaX < 0 ? 1 : -1);
-    }
-
-    setTouchStartX(null);
-  };
-
   const handleCloseModal = useCallback(() => {
     setSelectedProgram(null);
   }, []);
-
-  const parallaxOffset = Math.min(scrollY * 0.18, 120);
 
   return (
     <div className="premium-shell min-h-screen">
@@ -325,30 +294,24 @@ export default function HomePage() {
         {/* ── Hero ── */}
         <section
           id="hero"
-          ref={heroRef}
           className="relative flex min-h-screen items-end overflow-hidden"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
         >
+          {/* Gradient backgrounds */}
           <div className="absolute inset-0">
-            {heroSlides.map((slide, index) => (
+            {heroGradients.map((gradient, index) => (
               <div
-                key={slide.image}
+                key={index}
                 className={`hero-slide ${index === activeSlide ? "is-active" : ""}`}
-                style={{ transform: `translateY(${parallaxOffset}px) scale(1.08)` }}
-              >
-                <Image
-                  src={slide.image}
-                  alt={slide.title}
-                  fill
-                  priority={index === 0}
-                  sizes="100vw"
-                  className="object-cover"
-                />
-              </div>
+                style={{ background: gradient }}
+              />
             ))}
-            <div className="hero-overlay absolute inset-0" />
-            <div className="hero-secondary-overlay absolute inset-x-0 bottom-0 h-2/5" />
+            {/* Decorative geometric pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.04]" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }} />
+            {/* Gold accent glow */}
+            <div className="absolute bottom-0 left-1/4 h-96 w-96 rounded-full bg-[#d4af37] opacity-[0.06] blur-[120px]" />
+            <div className="absolute right-0 top-1/4 h-64 w-64 rounded-full bg-[#1b6b7a] opacity-[0.12] blur-[100px]" />
           </div>
 
           <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-20 pt-36 sm:px-6 lg:grid-cols-[1.25fr_0.75fr] lg:px-8 lg:pb-24">
@@ -395,9 +358,9 @@ export default function HomePage() {
 
           <div className="absolute inset-x-0 bottom-7 z-10 mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="hidden items-center gap-3 md:flex">
-              {heroSlides.map((slide, index) => (
+              {heroSlides.map((_, index) => (
                 <button
-                  key={slide.image}
+                  key={index}
                   type="button"
                   aria-label={`الانتقال إلى الشريحة ${index + 1}`}
                   className={`hero-dot ${index === activeSlide ? "is-active" : ""}`}
@@ -443,7 +406,7 @@ export default function HomePage() {
               {programs.map((item) => (
                 <article
                   key={item.id}
-                  className="destination-card cursor-pointer"
+                  className="group cursor-pointer overflow-hidden rounded-[32px] border border-[rgba(10,40,48,0.08)] bg-white shadow-[0_8px_40px_rgba(10,40,48,0.08)] transition-all duration-300 hover:shadow-[0_16px_60px_rgba(10,40,48,0.14)] hover:-translate-y-1"
                   onClick={() => setSelectedProgram(item)}
                   role="button"
                   tabIndex={0}
@@ -454,21 +417,26 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="destination-card-media">
-                    <Image src={item.image} alt={item.title} fill sizes="(max-width: 1024px) 100vw, 33vw" className="object-cover" />
-                    <div className="destination-card-overlay" />
-                  </div>
-                  <div className="destination-card-body">
-                    <div className="mb-3 flex items-center gap-3">
-                      <span className="inline-flex rounded-full bg-[#25D366]/20 px-3 py-1 text-xs font-bold text-[#25D366]">
-                        مجاني — تطوعي
-                      </span>
-                      <span className="text-sm tracking-[0.2em] text-[--color-gold]">{item.stats}</span>
+                  {/* Gradient header */}
+                  <div className={`relative bg-gradient-to-br ${item.accent} p-6 pb-10`}>
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20" />
                     </div>
-                    <h3 className="mt-2 font-amiri text-3xl text-white">{item.title}</h3>
-                    <p className="mt-3 text-base leading-7 text-white/80">{item.description}</p>
+                    <div className="relative z-10">
+                      <div className="text-4xl">{item.icon}</div>
+                      <div className="mt-3 inline-flex rounded-full bg-[#25D366]/20 px-3 py-1 text-xs font-bold text-[#25D366]">
+                        مجاني — تطوعي
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6 pt-5" dir="rtl">
+                    <span className="text-sm tracking-[0.2em] text-[--color-gold]">{item.stats}</span>
+                    <h3 className="mt-2 font-amiri text-3xl text-[--color-text-dark]">{item.title}</h3>
+                    <p className="mt-3 text-base leading-7 text-[--color-text-soft]">{item.description}</p>
                     <div className="mt-5">
-                      <span className="inline-flex items-center gap-2 text-sm font-medium text-[--color-gold-soft]">
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-[--color-gold] group-hover:text-[--color-primary]">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="12 6 12 12 16 14" />
@@ -486,9 +454,12 @@ export default function HomePage() {
         {/* ── Join / Contact ── */}
         <section id="join" className="section-padding" data-reveal>
           <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:px-8">
-            <div className="glass-tile relative min-h-[400px] overflow-hidden rounded-[36px] p-8 text-white">
-              <Image src="/premium/hero-4.jpg" alt="رحلة قرآنية" fill sizes="100vw" className="object-cover" />
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(4,24,30,0.3),rgba(4,24,30,0.85))]" />
+            {/* CTA card with gradient */}
+            <div className="relative min-h-[400px] overflow-hidden rounded-[36px] bg-gradient-to-br from-[#0a2830] via-[#1b6b7a] to-[#0a2830] p-8 text-white">
+              <div className="absolute inset-0 opacity-[0.06]" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }} />
+              <div className="absolute bottom-0 left-1/4 h-64 w-64 rounded-full bg-[#d4af37] opacity-[0.08] blur-[100px]" />
               <div className="relative z-10 flex h-full flex-col justify-end">
                 <span className="premium-pill mb-4">انضمي إلينا</span>
                 <p className="font-amiri text-4xl leading-tight">
