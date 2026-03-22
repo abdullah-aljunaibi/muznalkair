@@ -50,6 +50,13 @@ async function parseRequestBody(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection: verify Origin/Referer matches our domain
+    const origin = request.headers.get("origin") || request.headers.get("referer") || "";
+    const expectedOrigin = request.nextUrl.origin;
+    if (!origin.startsWith(expectedOrigin)) {
+      return errorResponse(request, "طلب غير مصرح به", 403);
+    }
+
     const parsed = await parseRequestBody(request);
 
     if (!parsed.success) {
@@ -100,40 +107,19 @@ export async function POST(request: NextRequest) {
 
     if (existingPurchase) {
       await prisma.progress.upsert({
-        where: {
-          userId_courseId: {
-            userId: userId,
-            courseId: course.id,
-          },
-        },
-        update: {
-          lastAccessedAt: new Date(),
-        },
-        create: {
-          userId: userId,
-          courseId: course.id,
-        },
+        where: { userId_courseId: { userId, courseId: course.id } },
+        update: { lastAccessedAt: new Date() },
+        create: { userId, courseId: course.id },
       });
-
       return successResponse(request, redirectUrl, true);
     }
 
-    await prisma.$transaction(async (tx) => {
-      const purchase = await tx.purchase.findFirst({
-        where: {
-          userId: userId,
-          courseId: course.id,
-          status: PurchaseStatus.COMPLETED,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!purchase) {
+    // Race-safe: use try/catch for unique violation on concurrent submits
+    try {
+      await prisma.$transaction(async (tx) => {
         await tx.purchase.create({
           data: {
-            userId: userId,
+            userId,
             courseId: course.id,
             amount: 0,
             discountAmount: 0,
@@ -141,24 +127,19 @@ export async function POST(request: NextRequest) {
             paymentMethod: PaymentMethod.WHATSAPP_BANK_TRANSFER,
           },
         });
-      }
-
-      await tx.progress.upsert({
-        where: {
-          userId_courseId: {
-            userId: userId,
-            courseId: course.id,
-          },
-        },
-        update: {
-          lastAccessedAt: new Date(),
-        },
-        create: {
-          userId: userId,
-          courseId: course.id,
-        },
+        await tx.progress.upsert({
+          where: { userId_courseId: { userId, courseId: course.id } },
+          update: { lastAccessedAt: new Date() },
+          create: { userId, courseId: course.id },
+        });
       });
-    });
+    } catch (err: unknown) {
+      // If duplicate purchase from race condition, treat as already enrolled
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
+        return successResponse(request, redirectUrl, true);
+      }
+      throw err;
+    }
 
     return successResponse(request, redirectUrl);
   } catch (error) {

@@ -142,6 +142,9 @@ model Lesson {
   module      CourseModule?    @relation(fields: [moduleId], references: [id])
   documents   Document[]
   progress    LessonProgress[]
+
+  @@index([courseId, order])
+  @@index([moduleId, order])
 }
 
 model CourseModule {
@@ -151,6 +154,8 @@ model CourseModule {
   order    Int      @default(0)
   course   Course   @relation(fields: [courseId], references: [id])
   lessons  Lesson[]
+
+  @@index([courseId, order])
 }
 
 model Document {
