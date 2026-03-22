@@ -169,8 +169,9 @@ function ScheduleModal({
       aria-label={`جدول ${program.title}`}
     >
       <div
-        className="relative w-full max-w-lg animate-[modalIn_0.25s_ease-out] overflow-hidden rounded-[32px] border border-white/10 bg-[--color-surface] shadow-2xl"
+        className="relative w-full max-w-lg animate-[modalIn_0.25s_ease-out] overflow-y-auto rounded-[32px] border border-white/10 bg-[--color-surface] shadow-2xl"
         dir="rtl"
+        style={{ maxHeight: "85vh", WebkitOverflowScrolling: "touch" }}
       >
         {/* Header with gradient */}
         <div className={`relative overflow-hidden bg-gradient-to-br ${program.accent} p-6 pb-8`}>
