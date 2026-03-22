@@ -9,17 +9,19 @@ datasource db {
 }
 
 model User {
-  id             String               @id @default(cuid())
+  id             String                   @id @default(cuid())
   name           String
-  email          String               @unique
+  email          String                   @unique
+  emailVerified  DateTime?
   password       String
-  role           Role                 @default(STUDENT)
-  createdAt      DateTime             @default(now())
+  role           Role                     @default(STUDENT)
+  createdAt      DateTime                 @default(now())
   purchases      Purchase[]
   progress       Progress[]
   reviews        Review[]
   lessonProgress LessonProgress[]
   resetTokens    PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   auditLogs      AuditLog[]
 }
 
@@ -191,6 +193,18 @@ model PasswordResetToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model AuditLog {

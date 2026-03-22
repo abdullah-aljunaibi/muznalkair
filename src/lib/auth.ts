@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import { CredentialsSignin } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -9,6 +10,12 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
+
+const VERIFICATION_REQUIRED_AFTER = new Date("2026-03-22T00:00:00Z");
+
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "EMAIL_NOT_VERIFIED";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -44,6 +51,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) return null;
+
+        if (
+          !user.emailVerified &&
+          user.role !== "ADMIN" &&
+          user.createdAt > VERIFICATION_REQUIRED_AFTER
+        ) {
+          throw new EmailNotVerifiedError();
+        }
 
         return {
           id: user.id,

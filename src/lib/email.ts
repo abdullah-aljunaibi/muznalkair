@@ -68,6 +68,30 @@ export async function sendWelcomeEmail(to: string, name: string) {
   });
 }
 
+export async function sendVerificationEmail(
+  to: string,
+  name: string,
+  token: string
+) {
+  const verifyUrl = `${getBaseUrl()}/api/auth/verify-email?token=${encodeURIComponent(
+    token
+  )}`;
+
+  return sendEmail({
+    to,
+    subject: "تفعيل حسابكِ في مقرأة مُزن الخير",
+    html: `
+      <div dir="rtl" style="font-family: Tahoma, Arial, sans-serif; line-height:1.8; color:#1f2937;">
+        <h2 style="margin:0 0 12px;">مرحبًا ${name}</h2>
+        <p>شكرًا لتسجيلكِ في مقرأة مُزن الخير.</p>
+        <p>لتفعيل حسابكِ، اضغطي على الرابط التالي (صالح لمدة 24 ساعة):</p>
+        <p><a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#1B6B7A;color:white;border-radius:8px;text-decoration:none;">تفعيل الحساب</a></p>
+        <p>إذا لم تقومي بالتسجيل، يمكنكِ تجاهل هذه الرسالة.</p>
+      </div>
+    `,
+  });
+}
+
 export async function sendPasswordResetEmail(to: string, resetToken: string) {
   const resetUrl = `${getBaseUrl()}/reset-password?token=${encodeURIComponent(
     resetToken

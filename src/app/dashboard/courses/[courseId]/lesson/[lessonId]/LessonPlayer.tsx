@@ -124,6 +124,8 @@ export default function LessonPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState("1");
   const sessionStartedAtRef = useRef<number | null>(null);
   const lastSavedWatchedSecsRef = useRef(savedWatchedSecs);
+  const currentWatchedSecsRef = useRef(savedWatchedSecs);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const nextLesson = allLessons.find((l) => l.id === nextLessonId) || null;
   const embedType = getEmbedType(lesson.videoUrl);
@@ -137,15 +139,22 @@ export default function LessonPlayer({
 
   useEffect(() => {
     lastSavedWatchedSecsRef.current = savedWatchedSecs;
+    currentWatchedSecsRef.current = savedWatchedSecs;
 
     if (!lesson.videoUrl) {
       sessionStartedAtRef.current = null;
       return;
     }
 
-    sessionStartedAtRef.current = Date.now();
+    if (embedType !== "other") {
+      sessionStartedAtRef.current = Date.now();
+    }
 
     const getWatchedSecs = () => {
+      if (embedType === "other") {
+        return currentWatchedSecsRef.current;
+      }
+
       if (sessionStartedAtRef.current === null) {
         return savedWatchedSecs;
       }
@@ -236,6 +245,39 @@ export default function LessonPlayer({
       sessionStartedAtRef.current = null;
     };
   }, [embedType, lesson.id, lesson.videoUrl, savedWatchedSecs]);
+
+  useEffect(() => {
+    if (embedType !== "other" || !videoRef.current) {
+      return;
+    }
+
+    videoRef.current.playbackRate = parseFloat(playbackSpeed);
+  }, [embedType, playbackSpeed, lesson.id]);
+
+  const handleTimeUpdate = () => {
+    if (!videoRef.current) {
+      return;
+    }
+
+    currentWatchedSecsRef.current = Math.floor(videoRef.current.currentTime);
+  };
+
+  const handleLoadedMetadata = () => {
+    if (!videoRef.current) {
+      return;
+    }
+
+    videoRef.current.playbackRate = parseFloat(playbackSpeed);
+
+    if (savedWatchedSecs > 0) {
+      const seekTo = Math.min(
+        savedWatchedSecs,
+        Math.floor(videoRef.current.duration || savedWatchedSecs)
+      );
+      videoRef.current.currentTime = seekTo;
+      currentWatchedSecsRef.current = seekTo;
+    }
+  };
 
   const handleMarkComplete = () => {
     startTransition(async () => {
@@ -370,8 +412,24 @@ export default function LessonPlayer({
           <div className="w-full" style={{ background: "#000" }}>
             {lesson.videoUrl ? (
               <div className="aspect-video w-full">
-                {/* TODO: Add playback speed controls for iframe embeds if we adopt a provider API later. */}
-                <iframe src={videoSrc || lesson.videoUrl} title={lesson.title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                {embedType === "other" ? (
+                  <video
+                    ref={videoRef}
+                    src={lesson.videoUrl}
+                    className="w-full h-full"
+                    controls
+                    controlsList="nodownload"
+                    playsInline
+                    preload="metadata"
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                  >
+                    <source src={lesson.videoUrl} />
+                    المتصفح لا يدعم تشغيل الفيديو
+                  </video>
+                ) : (
+                  <iframe src={videoSrc || lesson.videoUrl} title={lesson.title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                )}
               </div>
             ) : (
               <div className="aspect-video w-full flex flex-col items-center justify-center relative overflow-hidden" style={{ background: "#0D1117" }}>
@@ -385,7 +443,7 @@ export default function LessonPlayer({
             )}
           </div>
 
-          {!lesson.videoUrl ? (
+          {lesson.videoUrl && embedType === "other" ? (
             <div className="border-b bg-white px-4 py-3" style={{ borderColor: "#E5E7EB" }}>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <label htmlFor="playback-speed" className="text-sm font-medium" style={{ fontFamily: "var(--font-tajawal)", color: "#1B1F2E" }}>

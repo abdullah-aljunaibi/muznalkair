@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { z } from "zod";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { getRequestIp } from "@/lib/request-ip";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendVerificationEmail } from "@/lib/email";
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -46,24 +47,45 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const plainToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(plainToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          createdAt: true,
+        },
+      });
+
+      await tx.emailVerificationToken.create({
+        data: {
+          userId: createdUser.id,
+          tokenHash,
+          expiresAt,
+        },
+      });
+
+      return createdUser;
     });
 
-    void sendWelcomeEmail(user.email, user.name);
+    void sendVerificationEmail(user.email, user.name, plainToken);
 
-    return NextResponse.json({ user }, { status: 201 });
+    return NextResponse.json(
+      {
+        user,
+        message: "تم إنشاء الحساب. تحققي من بريدكِ الإلكتروني لتفعيل الحساب.",
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json(

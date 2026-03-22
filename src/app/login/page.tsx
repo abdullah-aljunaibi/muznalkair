@@ -9,11 +9,20 @@ import MuznLogo from "@/components/MuznLogo";
 function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendEmail, setResendEmail] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const hasError = searchParams.get("error");
+  const errorCode = searchParams.get("code");
   const registered = searchParams.get("registered") === "1";
   const resetSuccess = searchParams.get("reset") === "1";
+  const verified = searchParams.get("verified") === "1";
+  const invalidToken = searchParams.get("error") === "invalid_token";
+  const email = searchParams.get("email") || "";
+  const showEmailNotVerified = hasError === "CredentialsSignin" && errorCode === "EMAIL_NOT_VERIFIED";
+  const resendTargetEmail = resendEmail || email;
 
   return (
     <div
@@ -42,7 +51,7 @@ function LoginForm() {
             تسجيل الدخول
           </h2>
 
-          {hasError && (
+          {hasError && !showEmailNotVerified && !invalidToken && (
             <div
               className="mb-4 p-3 rounded-xl text-center text-sm"
               style={{
@@ -55,6 +64,51 @@ function LoginForm() {
             </div>
           )}
 
+          {showEmailNotVerified && (
+            <div
+              className="mb-4 rounded-xl p-3 text-center text-sm"
+              style={{
+                background: "#FEFCE8",
+                color: "#A16207",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              <p>البريد الإلكتروني غير مُفعّل. تحققي من بريدكِ الوارد.</p>
+              {resendTargetEmail ? (
+                <button
+                  type="button"
+                  disabled={resendLoading}
+                  onClick={async () => {
+                    setResendLoading(true);
+                    setResendMessage(null);
+                    try {
+                      const res = await fetch("/api/auth/resend-verification", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: resendTargetEmail }),
+                      });
+                      const data = await res.json().catch(() => null);
+                      setResendMessage(
+                        data?.message ||
+                          "إذا كان الحساب بحاجة إلى تفعيل، فسنرسل رسالة جديدة إلى بريدكِ."
+                      );
+                    } catch {
+                      setResendMessage(
+                        "إذا كان الحساب بحاجة إلى تفعيل، فسنرسل رسالة جديدة إلى بريدكِ."
+                      );
+                    } finally {
+                      setResendLoading(false);
+                    }
+                  }}
+                  className="mt-2 font-medium underline underline-offset-2"
+                  style={{ color: "#1B6B7A" }}
+                >
+                  {resendLoading ? "جارٍ إعادة الإرسال..." : "إعادة إرسال رابط التفعيل"}
+                </button>
+              ) : null}
+            </div>
+          )}
+
           {registered && (
             <div
               className="mb-4 p-3 rounded-xl text-center text-sm"
@@ -64,7 +118,33 @@ function LoginForm() {
                 fontFamily: "var(--font-tajawal)",
               }}
             >
-              تم إنشاء حسابكِ بنجاح. يمكنكِ تسجيل الدخول الآن.
+              تم إنشاء حسابكِ بنجاح. أرسلنا رابط التفعيل إلى بريدكِ الإلكتروني.
+            </div>
+          )}
+
+          {verified && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#ECFDF5",
+                color: "#047857",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              تم تفعيل حسابكِ بنجاح. يمكنكِ تسجيل الدخول الآن.
+            </div>
+          )}
+
+          {invalidToken && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#FEF2F2",
+                color: "#DC2626",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              رابط التفعيل غير صالح أو منتهي الصلاحية.
             </div>
           )}
 
@@ -90,7 +170,52 @@ function LoginForm() {
                 fontFamily: "var(--font-tajawal)",
               }}
             >
-              {formError}
+              <p>{formError}</p>
+              {formError === "البريد الإلكتروني غير مُفعّل. تحققي من بريدكِ الوارد." && resendTargetEmail ? (
+                <button
+                  type="button"
+                  disabled={resendLoading}
+                  onClick={async () => {
+                    setResendLoading(true);
+                    setResendMessage(null);
+                    try {
+                      const res = await fetch("/api/auth/resend-verification", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: resendTargetEmail }),
+                      });
+                      const data = await res.json().catch(() => null);
+                      setResendMessage(
+                        data?.message ||
+                          "إذا كان الحساب بحاجة إلى تفعيل، فسنرسل رسالة جديدة إلى بريدكِ."
+                      );
+                    } catch {
+                      setResendMessage(
+                        "إذا كان الحساب بحاجة إلى تفعيل، فسنرسل رسالة جديدة إلى بريدكِ."
+                      );
+                    } finally {
+                      setResendLoading(false);
+                    }
+                  }}
+                  className="mt-2 font-medium underline underline-offset-2"
+                  style={{ color: "#1B6B7A" }}
+                >
+                  {resendLoading ? "جارٍ إعادة الإرسال..." : "إعادة إرسال رابط التفعيل"}
+                </button>
+              ) : null}
+            </div>
+          )}
+
+          {resendMessage && (
+            <div
+              className="mb-4 p-3 rounded-xl text-center text-sm"
+              style={{
+                background: "#EFF6FF",
+                color: "#1D4ED8",
+                fontFamily: "var(--font-tajawal)",
+              }}
+            >
+              {resendMessage}
             </div>
           )}
 
@@ -103,15 +228,22 @@ function LoginForm() {
                 const form = new FormData(e.currentTarget);
                 const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
+                const submittedEmail = String(form.get("email") || "").trim().toLowerCase();
+                setResendEmail(submittedEmail);
+
                 const result = await signIn("credentials", {
-                  email: form.get("email"),
+                  email: submittedEmail,
                   password: form.get("password"),
                   callbackUrl,
                   redirect: false,
                 });
 
                 if (result?.error) {
-                  setFormError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+                  if (result.code === "EMAIL_NOT_VERIFIED") {
+                    setFormError("البريد الإلكتروني غير مُفعّل. تحققي من بريدكِ الوارد.");
+                  } else {
+                    setFormError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+                  }
                   setLoading(false);
                   return;
                 }
