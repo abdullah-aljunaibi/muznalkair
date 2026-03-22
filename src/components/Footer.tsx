@@ -12,6 +12,8 @@ const footerLinks = {
     { href: "/register", label: "إنشاء حساب" },
     { href: "/login", label: "تسجيل الدخول" },
     { href: "/checkout", label: "الاشتراك" },
+    { href: "/about", label: "عن المقرأة" },
+    { href: "/help", label: "المساعدة" },
   ],
 };
 

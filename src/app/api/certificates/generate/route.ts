@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 function generateCertificateCode() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -22,6 +23,11 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = session.user.id;
+  const rateLimit = checkRateLimit(`cert:${userId}`, { windowMs: 60 * 1000, maxRequests: 10 });
+  if (!rateLimit.success) {
+    return NextResponse.json({ error: "تم تجاوز عدد المحاولات" }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => null);
   const courseId = body?.courseId;
 

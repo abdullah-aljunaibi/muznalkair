@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/courses", label: "الدورات" },
   { href: "#stats", label: "الإنجازات" },
   { href: "#join", label: "الانضمام" },
+  { href: "/about", label: "عن المقرأة" },
 ];
 
 export default function Navbar() {
