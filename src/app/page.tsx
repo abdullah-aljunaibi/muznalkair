@@ -451,6 +451,70 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ── Mufti Testimonial ── */}
+        <section id="testimonial" className="section-padding" data-reveal>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 max-w-3xl">
+              <span className="section-kicker">شهادة وتقدير</span>
+              <h2 className="section-title">ماذا قالوا عنّا</h2>
+            </div>
+
+            <div className="overflow-hidden rounded-[36px] border border-[rgba(10,40,48,0.08)] bg-white shadow-[0_12px_60px_rgba(10,40,48,0.1)]">
+              {/* Header with gradient */}
+              <div className="relative bg-gradient-to-br from-[#0a2830] via-[#14505c] to-[#1b6b7a] p-6 sm:p-8">
+                <div className="absolute inset-0 opacity-[0.05]" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                }} />
+                <div className="relative z-10 flex flex-col items-center gap-2 text-center">
+                  <div className="inline-flex rounded-full bg-[--color-gold]/20 px-4 py-1.5 text-sm font-bold text-[--color-gold-soft]">
+                    بسم الله الرحمن الرحيم
+                  </div>
+                  <h3 className="mt-3 font-amiri text-3xl font-bold text-white sm:text-4xl">
+                    رسالة سماحة الشيخ أحمد بن حمد الخليلي
+                  </h3>
+                  <p className="text-sm text-white/60">المفتي العام لسلطنة عُمان</p>
+                  <p className="text-xs text-white/40">٢٩ ذو الحجة ١٤٤٦هـ — ٢٧ يونيو ٢٠٢٥م</p>
+                </div>
+              </div>
+
+              {/* Letter body */}
+              <div className="p-6 sm:p-10" dir="rtl">
+                <div className="mx-auto max-w-3xl">
+                  <p className="mb-6 text-base leading-8 text-[--color-text-soft]">
+                    إلى رائدات العلم (المعلمات والإداريات والمشرفات والطالبات) بمقرأة العلم مزن الخير وعلى رأسها الأبنة الأستاذة الفاضلة آمنة بنت سلطان الجنيبية مؤسسة المقرأة والداعمة لها، السلام عليكم ورحمة الله وبركاته... وبعد:
+                  </p>
+                  <p className="mb-6 font-amiri text-xl leading-10 text-[--color-text-dark] sm:text-2xl">
+                    فبيد الشكر والتقدير والسرور البالغ والتفاؤل الكبير؛ تلقيت رسالتكن الكريمة المعربة عن هذه الخطوات الإيجابية التي وفقكن الله لها في خدمة كتابه العزيز وتنشئة جيل واعٍ من الناشئات المباركات؛ بناتنا اللاتي يترين على القرآن الكريم، يقتبسن من نوره ما ينور البصائر ويقوم السلوك، ويهذب الأخلاق، ويرتقي بهن في معارج الخير ومراقي البر والإحسان.
+                  </p>
+                  <p className="mb-6 font-amiri text-xl leading-10 text-[--color-text-dark] sm:text-2xl">
+                    وإني لأهنئكن بهذه الخطوة المباركة، سائلاً الله تعالى أن يوفقكن ويوفق كل قائم بالخير لما فيه رضاه، وأن يأخذ بأيدكن جميعاً إلى خير الدارين، وأكرر لكن شكري على هذه الخدمة المباركة لكتاب الله تعالى التي تؤسس لجيل قرآني يعنى بكتاب الله تعالى تلاوةً وتجويداً وحفظاً وتطبيقاً وعملاً، وإلى الأمام دائماً.
+                  </p>
+                  <p className="mb-8 text-base leading-8 text-[--color-text-soft]">
+                    والسلام عليكم ورحمة الله وبركاته
+                  </p>
+
+                  {/* Signature */}
+                  <div className="border-t border-[rgba(10,40,48,0.08)] pt-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#1b6b7a] to-[#0a2830] text-2xl text-white">
+                        ✍️
+                      </div>
+                      <div>
+                        <div className="font-amiri text-xl font-bold text-[--color-text-dark]">
+                          سماحة الشيخ أحمد بن حمد الخليلي
+                        </div>
+                        <div className="text-sm text-[--color-text-soft]">
+                          المفتي العام لسلطنة عُمان
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── Join / Contact ── */}
         <section id="join" className="section-padding" data-reveal>
           <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:px-8">
