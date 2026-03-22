@@ -7,6 +7,7 @@ import MuznLogo from "./MuznLogo";
 const navLinks = [
   { href: "#hero", label: "الرئيسية" },
   { href: "#programs", label: "البرامج" },
+  { href: "/courses", label: "الدورات" },
   { href: "#stats", label: "الإنجازات" },
   { href: "#join", label: "الانضمام" },
 ];
@@ -92,7 +93,7 @@ export default function Navbar() {
         ) : null}
       </nav>
 
-      <div className="premium-bottom-tabs md:hidden">
+      <div className="premium-bottom-tabs md:hidden" style={{ gridTemplateColumns: `repeat(${navLinks.length}, minmax(0, 1fr))` }}>
         {navLinks.map((link) => (
           <a key={link.href} href={link.href} className="premium-bottom-tab">
             {link.label}
