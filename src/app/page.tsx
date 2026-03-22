@@ -6,8 +6,9 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { siteConfig } from "@/lib/seo";
 
-/* ── Zoom link placeholder — replace with real link when available ── */
-const ZOOM_LINK = "#"; // TODO: Replace with actual Zoom link
+/* ── Zoom links ── */
+const ZOOM_GENERAL = "https://us06web.zoom.us/j/81375857024?pwd=NnFkG7yKgZ0dAkqkhJvh66cLPaD8QC.1";
+const ZOOM_MOTHERS = "https://us06web.zoom.us/j/7379935756?pwd=bnIrU2xFM3Q4Kys3SlBLdFBkek9QQT09";
 
 /* ── Gradient backgrounds for hero slides ── */
 const heroGradients = [
@@ -57,6 +58,9 @@ interface Program {
   accent: string;
   icon: string;
   stats: string;
+  zoomLink: string;
+  closed?: boolean;
+  closedNote?: string;
   schedule: ProgramScheduleItem[];
 }
 
@@ -64,40 +68,46 @@ const programs: Program[] = [
   {
     id: "general",
     title: "المقرأة العامة",
-    description: "حلقات تصحيح التلاوة، دروس تجويد متنوعة، أحكام الفقه، المنظومات، كتاب المنير، حلقات لغير الناطقات بالعربية، وحلقات الأطفال.",
+    description: "حلقات مجانية عبر تطبيق الزوم يوميًا — تتنوع بين تصحيح التلاوة، استخراج الأحكام التجويدية، ودروس تجويدية متنوعة.",
     accent: "from-[#1b6b7a] to-[#0a2830]",
     icon: "📖",
     stats: "٧ برامج • ١٥,٠٠٠ طالبة",
+    zoomLink: ZOOM_GENERAL,
     schedule: [
-      { name: "حلقة تصحيح التلاوة", time: "٥:٠٠ - ٦:٣٠ صباحًا", days: "السبت — الخميس" },
-      { name: "دروس التجويد", time: "٩:٠٠ - ١٠:٣٠ صباحًا", days: "الأحد — الثلاثاء" },
-      { name: "أحكام الفقه والمنظومات", time: "٨:٠٠ - ٩:٣٠ مساءً", days: "الاثنين — الأربعاء" },
+      { name: "تصحيح التلاوة", time: "٣:٠٠ صباحًا — ٦:٠٠ مساءً", days: "يوميًا (بتوقيت مكة)" },
+      { name: "استخراج أحكام تجويدية", time: "ضمن الحلقات اليومية", days: "يوميًا" },
+      { name: "دروس تجويدية", time: "ضمن الحلقات اليومية", days: "يوميًا" },
     ],
   },
   {
     id: "mothers",
     title: "مقرأة الأمهات",
-    description: "تصحيح التلاوة، القاعدة النورانية، تلقين جزئي عم وتبارك، دروس التجويد والتدبر — برامج مصممة خصيصًا للأمهات.",
+    description: "حلقات مجانية مصممة للأمهات — تصحيح التلاوة للأميات في جزء عم وتبارك، دروس تجويدية للمستوى الأول، دروس في الصلاة، وحلقات القاعدة النورانية.",
     accent: "from-[#d4af37] to-[#8b7520]",
     icon: "🤲",
     stats: "٥ برامج • ١,١٠٠ طالبة",
+    zoomLink: ZOOM_MOTHERS,
     schedule: [
-      { name: "تصحيح التلاوة", time: "٩:٠٠ - ١٠:٣٠ صباحًا", days: "السبت — الخميس" },
-      { name: "القاعدة النورانية", time: "١٠:٣٠ - ١٢:٠٠ ظهرًا", days: "الأحد — الثلاثاء" },
-      { name: "دروس التدبر", time: "٨:٣٠ - ١٠:٠٠ مساءً", days: "الأحد — الأربعاء" },
+      { name: "تصحيح التلاوة (جزء عم وتبارك)", time: "٣:٠٠ صباحًا — ٦:٠٠ مساءً", days: "يوميًا (بتوقيت مكة)" },
+      { name: "دروس تجويدية — المستوى الأول", time: "ضمن الحلقات اليومية", days: "يوميًا" },
+      { name: "القاعدة النورانية للأميات", time: "ضمن الحلقات اليومية", days: "يوميًا" },
+      { name: "دروس في الصلاة", time: "ضمن الحلقات اليومية", days: "يوميًا" },
     ],
   },
   {
     id: "memorization",
-    title: "مقرأة الحفظ",
-    description: "برنامج الأترجة بثلاثة مسارات (الإذخر، السنا، قنوان)، البرامج الرمضانية، وبرنامج السرد القرآني رواء الآي.",
+    title: "مقرأة التحفيظ (برنامج الأترجة)",
+    description: "برنامج الأترجة بثلاثة مسارات للحفظ — غير متاح للانضمام حاليًا. يُعلن عن التسجيل نهاية شهر أغسطس من كل سنة.",
     accent: "from-[#0a2830] to-[#1b6b7a]",
     icon: "🌟",
-    stats: "٣ برامج • ١,٧٠٠ حافظة",
+    stats: "٣ مسارات • ١,٧٠٠+ حافظة",
+    zoomLink: "",
+    closed: true,
+    closedNote: "التسجيل مغلق حاليًا — يُفتح نهاية أغسطس من كل سنة",
     schedule: [
-      { name: "مسار الإذخر", time: "٥:٣٠ - ٧:٠٠ صباحًا", days: "السبت — الخميس" },
-      { name: "مسار السنا", time: "٩:٠٠ - ١٠:٣٠ صباحًا", days: "السبت — الأربعاء" },
-      { name: "مسار قنوان", time: "٨:٠٠ - ٩:٣٠ مساءً", days: "الأحد — الخميس" },
+      { name: "مسار الإذخر", time: "يُحدد عند التسجيل", days: "يُعلن عنه لاحقًا" },
+      { name: "مسار السنا", time: "يُحدد عند التسجيل", days: "يُعلن عنه لاحقًا" },
+      { name: "مسار قنوان", time: "يُحدد عند التسجيل", days: "يُعلن عنه لاحقًا" },
     ],
   },
 ];
@@ -208,17 +218,23 @@ function ScheduleModal({
 
           {/* CTA */}
           <div className="mt-6 space-y-3">
-            <a
-              href={ZOOM_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="premium-cta premium-cta-primary flex w-full items-center justify-center gap-2"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
-                <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-3l4 3V6l-4 3V5a2 2 0 00-2-2H4z" />
-              </svg>
-              انضمي عبر Zoom
-            </a>
+            {program.closed ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
+                <div className="text-lg font-bold text-amber-800">🔒 {program.closedNote}</div>
+              </div>
+            ) : (
+              <a
+                href={program.zoomLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="premium-cta premium-cta-primary flex w-full items-center justify-center gap-2"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-3l4 3V6l-4 3V5a2 2 0 00-2-2H4z" />
+                </svg>
+                انضمي عبر Zoom
+              </a>
+            )}
             <a
               href={`https://wa.me/${siteConfig.whatsapp.replace("+", "")}?text=${encodeURIComponent(`السلام عليكم، أرغب في الاستفسار عن ${program.title}`)}`}
               target="_blank"
@@ -425,8 +441,15 @@ export default function HomePage() {
                     </div>
                     <div className="relative z-10">
                       <div className="text-4xl">{item.icon}</div>
-                      <div className="mt-3 inline-flex rounded-full bg-[#25D366]/20 px-3 py-1 text-xs font-bold text-[#25D366]">
-                        مجاني — تطوعي
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="inline-flex rounded-full bg-[#25D366]/20 px-3 py-1 text-xs font-bold text-[#25D366]">
+                          مجاني — تطوعي
+                        </span>
+                        {item.closed && (
+                          <span className="inline-flex rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300">
+                            التسجيل مغلق حاليًا
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -501,7 +524,7 @@ export default function HomePage() {
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <a
-                    href={ZOOM_LINK}
+                    href={ZOOM_GENERAL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="premium-cta premium-cta-primary inline-flex items-center gap-2"
