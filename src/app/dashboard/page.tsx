@@ -31,6 +31,13 @@ export default async function DashboardPage() {
     .findMany({ where: { userId } })
     .catch(() => []);
 
+  const lastProgress = await prisma.progress
+    .findFirst({
+      where: { userId },
+      orderBy: { lastAccessedAt: "desc" },
+    })
+    .catch(() => null);
+
   const progressMap = Object.fromEntries(progressList.map((p) => [p.courseId, p]));
 
   const completedCourses = purchases.filter((p) => {
@@ -56,6 +63,63 @@ export default async function DashboardPage() {
     const total = p.course.totalLessons || 1;
     return prog && prog.completedLessons >= total;
   });
+
+  const orderedProgressList = lastProgress
+    ? [lastProgress, ...progressList.filter((progress) => progress.id !== lastProgress.id)]
+    : progressList;
+
+  const continueLearningPurchase =
+    purchases.find((purchase) => purchase.courseId === lastProgress?.courseId) ??
+    orderedProgressList
+      .map((progress) => purchases.find((purchase) => purchase.courseId === progress.courseId))
+      .find((purchase): purchase is (typeof purchases)[number] => {
+        if (!purchase) return false;
+        const progress = progressMap[purchase.courseId];
+        const total = purchase.course.totalLessons || 1;
+        const completed = progress?.completedLessons || 0;
+        return completed < total;
+      }) ??
+    null;
+
+  const continueLearningProgress = continueLearningPurchase
+    ? progressMap[continueLearningPurchase.courseId]
+    : null;
+
+  const continueLearningCourse =
+    continueLearningPurchase && continueLearningProgress
+      ? (() => {
+          const total = continueLearningPurchase.course.totalLessons || 1;
+          const completed = continueLearningProgress.completedLessons || 0;
+          return completed < total ? continueLearningPurchase : null;
+        })()
+      : null;
+
+  const nextIncompleteLesson = continueLearningCourse
+    ? await prisma.lesson.findFirst({
+        where: {
+          courseId: continueLearningCourse.courseId,
+          OR: [
+            { progress: { none: { userId } } },
+            { progress: { some: { userId, completed: false } } },
+          ],
+        },
+        orderBy: { order: "asc" },
+      })
+    : null;
+
+  const continueLearningLastAccessed = continueLearningProgress?.lastAccessedAt
+    ? new Date(continueLearningProgress.lastAccessedAt).toLocaleDateString("ar-SA", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : null;
+
+  const continueLearningTotal = continueLearningCourse?.course.totalLessons || 1;
+  const continueLearningCompleted = continueLearningProgress?.completedLessons || 0;
+  const continueLearningPercentage = Math.round(
+    (continueLearningCompleted / continueLearningTotal) * 100
+  );
 
   const courseCards = (items: typeof purchases) => (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -193,6 +257,73 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {continueLearningCourse && continueLearningProgress && nextIncompleteLesson ? (
+        <section
+          className="mb-8 overflow-hidden rounded-2xl p-5 text-white shadow-lg sm:p-6"
+          style={{
+            background: "linear-gradient(135deg, #1b6b7a 0%, #0a2830 100%)",
+            boxShadow: "0 18px 40px rgba(10,40,48,0.25)",
+          }}
+        >
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <p
+                className="mb-2 text-sm font-medium text-white/80"
+                style={{ fontFamily: "var(--font-tajawal)" }}
+              >
+                متابعة التعلّم
+              </p>
+              <h2
+                className="mb-3 text-2xl font-bold"
+                style={{ fontFamily: "var(--font-amiri)" }}
+              >
+                {continueLearningCourse.course.title}
+              </h2>
+              <p
+                className="mb-4 text-sm text-white/85"
+                style={{ fontFamily: "var(--font-tajawal)" }}
+              >
+                الدرس التالي: {nextIncompleteLesson.title}
+              </p>
+
+              <div className="mb-3 flex flex-wrap items-center gap-3 text-sm text-white/80">
+                <span style={{ fontFamily: "var(--font-tajawal)" }}>
+                  {continueLearningCompleted} / {continueLearningTotal} درس
+                </span>
+                {continueLearningLastAccessed ? (
+                  <span style={{ fontFamily: "var(--font-tajawal)" }}>
+                    آخر وصول: {continueLearningLastAccessed}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mb-2 h-3 w-full max-w-2xl overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full bg-white transition-all duration-500"
+                  style={{ width: `${continueLearningPercentage}%` }}
+                />
+              </div>
+              <p
+                className="text-xs text-white/75"
+                style={{ fontFamily: "var(--font-tajawal)" }}
+              >
+                نسبة الإنجاز: {continueLearningPercentage}٪
+              </p>
+            </div>
+
+            <div className="flex-shrink-0">
+              <Link
+                href={`/dashboard/courses/${continueLearningCourse.courseId}/lesson/${nextIncompleteLesson.id}`}
+                className="flex min-h-11 items-center justify-center rounded-2xl bg-white px-6 py-3 text-base font-bold transition-all hover:opacity-90"
+                style={{ color: "#0A2830", fontFamily: "var(--font-tajawal)" }}
+              >
+                متابعة التعلم ←
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[

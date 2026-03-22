@@ -50,6 +50,10 @@ export default async function LessonPage({
   const nextLesson = lessonIndex < course.lessons.length - 1 ? course.lessons[lessonIndex + 1] : null;
   const completedCount = course.lessons.filter((l) => l.progress[0]?.completed).length;
 
+  const lessonProgress = await prisma.lessonProgress.findUnique({
+    where: { userId_lessonId: { userId, lessonId } },
+  });
+
   await prisma.progress.upsert({
     where: { userId_courseId: { userId, courseId } },
     update: { lastAccessedAt: new Date() },
@@ -96,6 +100,7 @@ export default async function LessonPage({
       totalCount={course.lessons.length}
       prevLessonId={prevLesson?.id ?? null}
       nextLessonId={nextLesson?.id ?? null}
+      savedWatchedSecs={lessonProgress?.watchedSecs || 0}
     />
   );
 }

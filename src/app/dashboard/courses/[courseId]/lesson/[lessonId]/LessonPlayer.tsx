@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -41,6 +41,68 @@ interface Props {
   totalCount: number;
   prevLessonId: string | null;
   nextLessonId: string | null;
+  savedWatchedSecs: number;
+}
+
+const SAVE_INTERVAL_MS = 30000;
+const PLAYBACK_SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+type EmbedType = "youtube" | "vimeo" | "other" | "none";
+
+function getEmbedType(videoUrl: string | null): EmbedType {
+  if (!videoUrl) return "none";
+
+  try {
+    const url = new URL(videoUrl);
+    const host = url.hostname.toLowerCase();
+
+    if (host.includes("youtube.com") || host.includes("youtu.be")) {
+      return "youtube";
+    }
+
+    if (host.includes("vimeo.com")) {
+      return "vimeo";
+    }
+  } catch {
+    return "other";
+  }
+
+  return "other";
+}
+
+function buildResumeVideoUrl(videoUrl: string, savedSecs: number) {
+  if (savedSecs <= 0) return videoUrl;
+
+  try {
+    const url = new URL(videoUrl);
+    const embedType = getEmbedType(videoUrl);
+
+    if (embedType === "youtube") {
+      url.searchParams.set("start", String(savedSecs));
+      return url.toString();
+    }
+
+    if (embedType === "vimeo") {
+      url.hash = `t=${savedSecs}s`;
+      return url.toString();
+    }
+  } catch {
+    return videoUrl;
+  }
+
+  return videoUrl;
+}
+
+function formatWatchedTime(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 export default function LessonPlayer({
@@ -52,14 +114,128 @@ export default function LessonPlayer({
   totalCount,
   prevLessonId,
   nextLessonId,
+  savedWatchedSecs,
 }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"description" | "documents">("description");
   const [isCompleted, setIsCompleted] = useState(lesson.isCompleted);
   const [isPending, startTransition] = useTransition();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState("1");
+  const sessionStartedAtRef = useRef<number | null>(null);
+  const lastSavedWatchedSecsRef = useRef(savedWatchedSecs);
 
   const nextLesson = allLessons.find((l) => l.id === nextLessonId) || null;
+  const embedType = getEmbedType(lesson.videoUrl);
+  const videoSrc = lesson.videoUrl
+    ? buildResumeVideoUrl(lesson.videoUrl, savedWatchedSecs)
+    : null;
+
+  // Sync local completed state when lesson prop changes (e.g. navigation)
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional prop-to-state sync
+  useEffect(() => { setIsCompleted(lesson.isCompleted); }, [lesson.isCompleted, lesson.id]);
+
+  useEffect(() => {
+    lastSavedWatchedSecsRef.current = savedWatchedSecs;
+
+    if (!lesson.videoUrl) {
+      sessionStartedAtRef.current = null;
+      return;
+    }
+
+    sessionStartedAtRef.current = Date.now();
+
+    const getWatchedSecs = () => {
+      if (sessionStartedAtRef.current === null) {
+        return savedWatchedSecs;
+      }
+
+      const elapsedSeconds = Math.max(
+        0,
+        Math.floor((Date.now() - sessionStartedAtRef.current) / 1000)
+      );
+
+      return savedWatchedSecs + elapsedSeconds;
+    };
+
+    const persistWatchedSecs = async () => {
+      const watchedSecs = getWatchedSecs();
+
+      if (watchedSecs <= lastSavedWatchedSecsRef.current) {
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/user/lesson-progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lessonId: lesson.id, watchedSecs }),
+        });
+
+        if (res.ok) {
+          lastSavedWatchedSecsRef.current = watchedSecs;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const flushWatchedSecs = () => {
+      const watchedSecs = getWatchedSecs();
+
+      if (watchedSecs <= lastSavedWatchedSecsRef.current) {
+        return;
+      }
+
+      const body = JSON.stringify({ lessonId: lesson.id, watchedSecs });
+
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        const saved = navigator.sendBeacon(
+          "/api/user/lesson-progress",
+          new Blob([body], { type: "application/json" })
+        );
+
+        if (saved) {
+          lastSavedWatchedSecsRef.current = watchedSecs;
+          return;
+        }
+      }
+
+      void fetch("/api/user/lesson-progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true,
+      }).then((res) => {
+        if (res.ok) {
+          lastSavedWatchedSecsRef.current = watchedSecs;
+        }
+      }).catch((error) => {
+        console.error(error);
+      });
+    };
+
+    if (savedWatchedSecs > 0 && embedType === "other") {
+      toast.info(`استئني من ${formatWatchedTime(savedWatchedSecs)}`);
+    }
+
+    const intervalId = window.setInterval(() => {
+      void persistWatchedSecs();
+    }, SAVE_INTERVAL_MS);
+
+    const handleBeforeUnload = () => {
+      flushWatchedSecs();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      flushWatchedSecs();
+      sessionStartedAtRef.current = null;
+    };
+  }, [embedType, lesson.id, lesson.videoUrl, savedWatchedSecs]);
 
   const handleMarkComplete = () => {
     startTransition(async () => {
@@ -194,7 +370,8 @@ export default function LessonPlayer({
           <div className="w-full" style={{ background: "#000" }}>
             {lesson.videoUrl ? (
               <div className="aspect-video w-full">
-                <iframe src={lesson.videoUrl} title={lesson.title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                {/* TODO: Add playback speed controls for iframe embeds if we adopt a provider API later. */}
+                <iframe src={videoSrc || lesson.videoUrl} title={lesson.title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
               </div>
             ) : (
               <div className="aspect-video w-full flex flex-col items-center justify-center relative overflow-hidden" style={{ background: "#0D1117" }}>
@@ -207,6 +384,29 @@ export default function LessonPlayer({
               </div>
             )}
           </div>
+
+          {!lesson.videoUrl ? (
+            <div className="border-b bg-white px-4 py-3" style={{ borderColor: "#E5E7EB" }}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <label htmlFor="playback-speed" className="text-sm font-medium" style={{ fontFamily: "var(--font-tajawal)", color: "#1B1F2E" }}>
+                  سرعة التشغيل
+                </label>
+                <select
+                  id="playback-speed"
+                  value={playbackSpeed}
+                  onChange={(event) => setPlaybackSpeed(event.target.value)}
+                  className="min-h-11 rounded-xl border px-3 py-2 text-sm outline-none"
+                  style={{ borderColor: "#D1D5DB", fontFamily: "var(--font-tajawal)", color: "#1B1F2E" }}
+                >
+                  {PLAYBACK_SPEED_OPTIONS.map((speed) => (
+                    <option key={speed} value={String(speed)}>
+                      {speed}x
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
 
           <div className="p-4 md:p-6 flex-1">
             <div className="flex items-center justify-between mb-6">
