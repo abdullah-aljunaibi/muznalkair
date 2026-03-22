@@ -120,6 +120,13 @@
 - [ ] **Certificate** information (if any)
 - [ ] **Replace MuznLogo SVG** — Wire the real logo image (`public/logo-muzn.jpg`) into the MuznLogo component (currently uses a placeholder SVG)
 - [ ] **Replace hero stock photos** — Get academy-specific images for the hero slides
+- [ ] **Thawani Go-Live** — Steps to activate Thawani payments:
+  1. Sign up for Thawani merchant account at thawani.om
+  2. Get test API keys from merchant dashboard
+  3. Set Vercel env vars: `THAWANI_API_KEY`, `THAWANI_PUBLISHABLE_KEY`
+  4. Configure webhook URL in Thawani dashboard: `https://muznalkair.com/api/webhook/thawani`
+  5. Test with UAT sandbox + test card
+  6. Switch `THAWANI_API_URL` to `https://checkout.thawani.om/api/v1` for production
 - [ ] **DKIM domain verification** — Complete Resend email domain verification
 - [ ] **Video hosting solution** — Currently placeholder/iframe
 - [ ] **Phase 5 — Auth/security review** — Admin route protection audit, CSRF/mutation safety, password reset abuse checks, brute-force tightening
