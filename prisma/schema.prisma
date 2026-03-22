@@ -18,6 +18,7 @@ model User {
   createdAt      DateTime                 @default(now())
   purchases      Purchase[]
   progress       Progress[]
+  certificates   Certificate[]
   reviews        Review[]
   lessonProgress LessonProgress[]
   resetTokens    PasswordResetToken[]
@@ -42,8 +43,22 @@ model Course {
   createdAt    DateTime       @default(now())
   purchases    Purchase[]
   progress     Progress[]
+  certificates Certificate[]
   lessons      Lesson[]
   modules      CourseModule[]
+}
+
+model Certificate {
+  id       String   @id @default(cuid())
+  userId   String
+  courseId String
+  code     String   @unique
+  issuedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id])
+  course   Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@index([code])
 }
 
 model Purchase {

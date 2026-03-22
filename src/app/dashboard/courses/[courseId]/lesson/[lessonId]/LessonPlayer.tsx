@@ -289,6 +289,22 @@ export default function LessonPlayer({
         });
         const data = await res.json().catch(() => null);
         if (res.ok) {
+          const nextCompletedState = !isCompleted;
+          const allDone = allLessons.every((l) => (l.id === lesson.id ? nextCompletedState : l.isCompleted));
+
+          if (allDone && !isCompleted) {
+            try {
+              await fetch("/api/certificates/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ courseId }),
+              });
+              toast.success("🎉 مبارك! أتممتِ الدورة. يمكنكِ تحميل الشهادة من صفحة الشهادات.");
+            } catch (error) {
+              console.error(error);
+            }
+          }
+
           setIsCompleted(!isCompleted);
           router.refresh();
           return;

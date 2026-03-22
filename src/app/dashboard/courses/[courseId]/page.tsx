@@ -4,6 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+function formatArabicDate(date: Date) {
+  return new Intl.DateTimeFormat("ar-OM", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
 export default async function CourseOverviewPage({
   params,
 }: {
@@ -24,6 +32,14 @@ export default async function CourseOverviewPage({
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: {
+      certificates: {
+        where: { userId },
+        select: {
+          code: true,
+          issuedAt: true,
+        },
+        take: 1,
+      },
       lessons: {
         orderBy: { order: "asc" },
         include: {
@@ -41,6 +57,7 @@ export default async function CourseOverviewPage({
   const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   const nextLessonIndex = firstUnlockedLessonIndex(completedFlags);
   const nextLesson = course.lessons[nextLessonIndex] || course.lessons[0];
+  const certificate = course.certificates[0] ?? null;
 
   return (
     <div className="max-w-6xl mx-auto" dir="rtl">
@@ -101,6 +118,34 @@ export default async function CourseOverviewPage({
         </aside>
 
         <main className="flex-1 min-w-0">
+          {certificate ? (
+            <div
+              className="mb-6 rounded-2xl border p-5"
+              style={{ background: "#F5F0E8", borderColor: "#E9D7B4", boxShadow: "0 4px 15px rgba(27,107,122,0.08)" }}
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold" style={{ fontFamily: "var(--font-amiri)", color: "#1B6B7A" }}>
+                    🎉 أتممتِ هذه الدورة
+                  </h2>
+                  <p className="mt-1 text-sm" style={{ fontFamily: "var(--font-tajawal)", color: "#6B7280" }}>
+                    تاريخ الإصدار: {formatArabicDate(certificate.issuedAt)}
+                  </p>
+                  <p className="mt-2 text-sm font-medium" style={{ fontFamily: "var(--font-tajawal)", color: "#7A6555" }}>
+                    رمز التحقق: <span className="font-bold text-[#1B1F2E]">{certificate.code}</span>
+                  </p>
+                </div>
+                <Link
+                  href={`/certificate/${certificate.code}`}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  style={{ background: "#1B6B7A", fontFamily: "var(--font-tajawal)" }}
+                >
+                  عرض الشهادة
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-2xl overflow-hidden mb-6" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
             <div className="w-full h-48 relative flex items-center justify-center" style={{ background: "linear-gradient(135deg, #1B6B7A 0%, #2A8FA0 60%, #1B4F5A 100%)" }}>
               <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">

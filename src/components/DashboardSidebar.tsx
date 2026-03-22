@@ -47,6 +47,16 @@ const navItems = [
     ),
   },
   {
+    href: "/dashboard/certificates",
+    label: "شهاداتي",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="8" r="6" />
+        <path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.11" />
+      </svg>
+    ),
+  },
+  {
     href: "/dashboard/profile",
     label: "ملفي الشخصي",
     icon: (
