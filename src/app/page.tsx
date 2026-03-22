@@ -264,7 +264,7 @@ export default function HomePage() {
       "@type": "Organization",
       name: siteConfig.name,
       url: siteConfig.url,
-      logo: `${siteConfig.url}/logo-muzn.jpg`,
+      logo: `${siteConfig.url}/logo-muzn.png`,
       sameAs: [
         siteConfig.instagram,
         `https://wa.me/${siteConfig.whatsapp.replace("+", "")}`,
