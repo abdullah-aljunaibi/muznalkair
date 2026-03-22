@@ -13,35 +13,42 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const verificationToken = await prisma.emailVerificationToken.findFirst({
-      where: {
-        tokenHash,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      select: {
-        id: true,
-        userId: true,
-      },
+    const now = new Date();
+
+    // Atomic: claim token first with conditional write, then verify user
+    const result = await prisma.$transaction(async (tx) => {
+      // Conditionally update only if token is unused and not expired
+      const claimed = await tx.emailVerificationToken.updateMany({
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: { usedAt: now },
+      });
+
+      if (claimed.count === 0) return null;
+
+      // Find the token to get userId
+      const claimedToken = await tx.emailVerificationToken.findFirst({
+        where: { tokenHash },
+        select: { userId: true },
+      });
+
+      if (!claimedToken) return null;
+
+      await tx.user.update({
+        where: { id: claimedToken.userId },
+        data: { emailVerified: now },
+      });
+
+      return { verified: true };
     });
 
-    if (!verificationToken) {
+    if (!result) {
       loginUrl.searchParams.set("error", "invalid_token");
       return NextResponse.redirect(loginUrl);
     }
-
-    const now = new Date();
-
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: verificationToken.userId },
-        data: { emailVerified: now },
-      }),
-      prisma.emailVerificationToken.update({
-        where: { id: verificationToken.id },
-        data: { usedAt: now },
-      }),
-    ]);
 
     loginUrl.searchParams.set("verified", "1");
     return NextResponse.redirect(loginUrl);

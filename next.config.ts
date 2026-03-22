@@ -16,6 +16,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "frame-src 'self' https://us06web.zoom.us https://www.youtube.com https://player.vimeo.com https://uatcheckout.thawani.om https://checkout.thawani.om",
       "connect-src 'self' https://api.resend.com https://uatcheckout.thawani.om https://checkout.thawani.om",
+      "media-src 'self' blob: https:",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

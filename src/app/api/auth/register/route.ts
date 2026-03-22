@@ -86,7 +86,14 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: unknown) {
+    // Handle duplicate email race condition (two simultaneous registrations)
+    if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
+      return NextResponse.json(
+        { error: "البريد الإلكتروني مسجّل بالفعل" },
+        { status: 409 }
+      );
+    }
     console.error("Register error:", error);
     return NextResponse.json(
       { error: "حدث خطأ في الخادم، يرجى المحاولة لاحقًا" },
