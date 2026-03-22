@@ -50,11 +50,86 @@ function LessonStatusIcon({ isPreview }: { isPreview: boolean }) {
   );
 }
 
+type SyllabusLesson = {
+  id: string;
+  title: string;
+  description: string | null;
+  duration: number;
+  order: number;
+  isPreview: boolean;
+};
+
+function LessonCard({ lesson, index }: { lesson: SyllabusLesson; index: number }) {
+  return (
+    <div className="rounded-[24px] border border-[var(--color-border)] bg-white/90 p-5 shadow-[0_12px_32px_rgba(10,40,48,0.05)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-sand)] font-bold text-[var(--color-primary)]">
+            {lesson.order || index + 1}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h3 className="font-amiri text-2xl leading-tight text-[var(--color-text-dark)]">{lesson.title}</h3>
+              {lesson.isPreview ? (
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  معاينة
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 text-sm text-[var(--color-text-soft)]">
+              {lesson.duration > 0 ? `${lesson.duration} دقيقة` : "المدة تُحدّد لاحقًا"}
+            </p>
+            {lesson.description ? (
+              <p className="mt-3 text-sm leading-7 text-[var(--color-text-soft)]">{lesson.description}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="shrink-0 pt-1">
+          <LessonStatusIcon isPreview={lesson.isPreview} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModuleSection({
+  title,
+  lessons,
+  defaultOpen = false,
+}: {
+  title: string;
+  lessons: SyllabusLesson[];
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details
+      className="overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-white/70"
+      open={defaultOpen}
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4">
+        <div>
+          <h3 className="font-amiri text-2xl text-[var(--color-text-dark)]">{title}</h3>
+          <p className="mt-1 text-sm text-[var(--color-text-soft)]">{lessons.length} {lessons.length === 1 ? "درس" : "دروس"}</p>
+        </div>
+        <span className="rounded-full bg-[var(--color-sand)] px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
+          قابل للطي
+        </span>
+      </summary>
+
+      <div className="space-y-4 border-t border-[var(--color-border)] px-4 py-4 sm:px-5">
+        {lessons.map((lesson, index) => (
+          <LessonCard key={lesson.id} lesson={lesson} index={index} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
 async function getCourse(courseId: string) {
-  return prisma.course.findFirst({
+  return prisma.course.findUnique({
     where: {
       id: courseId,
-      isActive: true,
     },
     include: {
       lessons: {
@@ -69,6 +144,18 @@ async function getCourse(courseId: string) {
           },
         },
       },
+      modules: {
+        orderBy: {
+          order: "asc",
+        },
+        include: {
+          lessons: {
+            orderBy: {
+              order: "asc",
+            },
+          },
+        },
+      },
     },
   });
 }
@@ -79,19 +166,19 @@ export async function generateMetadata({
   params: Promise<{ courseId: string }>;
 }): Promise<Metadata> {
   const { courseId } = await params;
-  const course = await prisma.course.findFirst({
+  const course = await prisma.course.findUnique({
     where: {
       id: courseId,
-      isActive: true,
     },
     select: {
       title: true,
       description: true,
       thumbnail: true,
+      isActive: true,
     },
   });
 
-  if (!course) {
+  if (!course || !course.isActive) {
     return {
       title: "الدورة غير موجودة",
       description: "تعذر العثور على الدورة المطلوبة.",
@@ -130,7 +217,7 @@ export default async function CourseDetailPage({
   const session = await auth();
   const course = await getCourse(courseId);
 
-  if (!course) {
+  if (!course || !course.isActive) {
     notFound();
   }
 
@@ -151,6 +238,8 @@ export default async function CourseDetailPage({
   const totalDocuments = course.lessons.reduce((sum, lesson) => sum + lesson.documents.length, 0);
   const lessonCount = course.lessons.length || course.totalLessons;
   const loginUrl = `/login?callbackUrl=${encodeURIComponent(`/courses/${course.id}`)}`;
+  const lessonsWithoutModule = course.lessons.filter((lesson) => !lesson.moduleId);
+  const hasModules = course.modules.length > 0;
 
   return (
     <div className="premium-shell">
@@ -248,44 +337,32 @@ export default async function CourseDetailPage({
                 </div>
 
                 <div className="space-y-4">
-                  {course.lessons.map((lesson, index) => (
-                    <div
-                      key={lesson.id}
-                      className="rounded-[24px] border border-[var(--color-border)] bg-white/90 p-5 shadow-[0_12px_32px_rgba(10,40,48,0.05)]"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex min-w-0 items-start gap-4">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-sand)] font-bold text-[var(--color-primary)]">
-                            {lesson.order || index + 1}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <h3 className="font-amiri text-2xl leading-tight text-[var(--color-text-dark)]">
-                                {lesson.title}
-                              </h3>
-                              {lesson.isPreview ? (
-                                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                                  معاينة
-                                </span>
-                              ) : null}
-                            </div>
-                            <p className="mt-2 text-sm text-[var(--color-text-soft)]">
-                              {lesson.duration > 0 ? `${lesson.duration} دقيقة` : "المدة تُحدّد لاحقًا"}
-                            </p>
-                            {lesson.description ? (
-                              <p className="mt-3 text-sm leading-7 text-[var(--color-text-soft)]">
-                                {lesson.description}
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
+                  {hasModules ? (
+                    <>
+                      {course.modules
+                        .filter((module) => module.lessons.length > 0)
+                        .map((module, index) => (
+                          <ModuleSection
+                            key={module.id}
+                            title={module.title}
+                            lessons={module.lessons}
+                            defaultOpen={index === 0}
+                          />
+                        ))}
 
-                        <div className="shrink-0 pt-1">
-                          <LessonStatusIcon isPreview={lesson.isPreview} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      {lessonsWithoutModule.length > 0 ? (
+                        <ModuleSection
+                          title="أخرى"
+                          lessons={lessonsWithoutModule}
+                          defaultOpen={course.modules.length === 0}
+                        />
+                      ) : null}
+                    </>
+                  ) : (
+                    course.lessons.map((lesson, index) => (
+                      <LessonCard key={lesson.id} lesson={lesson} index={index} />
+                    ))
+                  )}
                 </div>
               </section>
 
